@@ -1,0 +1,9 @@
+import type { Metadata } from 'next';
+import { CollectionScreen } from '@/components/admin/CollectionScreen';
+
+export const dynamic = 'force-dynamic';
+export const metadata: Metadata = { title: 'Gallery · Admin' };
+
+export default function Page() {
+  return <CollectionScreen collection="gallery" />;
+}
