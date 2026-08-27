@@ -22,12 +22,13 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       const { data } = await supabase
         .from(spec.table)
         .select(`id, ${spec.labelField}`)
-        .eq('status', 'draft');
+        .eq('status', 'draft')
+        .overrideTypes<Record<string, unknown>[], { merge: false }>();
 
       if (data?.length) {
         drafts[key] = data.length;
         data.forEach((row) => {
-          const raw = (row as Record<string, unknown>)[spec.labelField];
+          const raw = row[spec.labelField];
           diff.push({ label: String(raw || 'Untitled record'), section: spec.section });
         });
       }
