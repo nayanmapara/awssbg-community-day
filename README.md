@@ -1,96 +1,69 @@
 # AWS Community Day @ Sheridan College
 
-Production Next.js app for the AWS Student Builder Group's Community Day —
-public event site plus a private admin dashboard, backed by Supabase, deployed
-on Vercel.
+This is the site for the AWS Student Builder Group's Community Day at Sheridan —
+the public event pages plus a private admin dashboard we use to run everything
+leading up to and during the day. Next.js on Vercel, Supabase for the database
+and auth.
 
-Built for **Nayan Mapara** (Head of Technology) to run and deploy.
+I (Nayan, Head of Technology) built and maintain this.
 
----
-
-**Deploying? See [DEPLOY.md](./DEPLOY.md).** It needs no environment variables
-for the first build.
-
----
+Deploying it? Start with [DEPLOY.md](./DEPLOY.md) — the first build doesn't
+need any env vars.
 
 ## Stack
 
-| Layer | Choice | Why |
-| --- | --- | --- |
-| Framework | Next.js 15 (App Router, TypeScript) | Server Components + Server Actions, no separate API server |
-| Database | Supabase Postgres | Real relations, row-level security, free tier |
-| Auth | Supabase Auth (Google OAuth) | No passwords to share, per-person revocation |
-| Files | Supabase Storage | Headshots, logos, gallery photos |
-| Hosting | Vercel (region `iad1`) | Static public pages, serverless actions, cron |
-| Styling | Inline styles + `lib/tokens.ts` | Matches the approved prototypes exactly, zero CSS build |
-| QR | `html5-qrcode` (dynamic import) | Camera scanning at the door |
+Next.js 15 with the App Router, TypeScript, Server Components and Server
+Actions so there's no separate API layer to maintain. Supabase for Postgres,
+auth (Google OAuth), and file storage — it's free at our scale and row-level
+security means the database itself enforces who can see what, not just the
+UI. Hosted on Vercel in `iad1`.
 
-No Tailwind, no CSS-in-JS runtime, no state library. Five dependencies total.
+Styling is inline styles plus a `lib/tokens.ts` file rather than Tailwind or
+any CSS-in-JS — it matches the approved design prototypes exactly and there's
+no CSS build step to think about. QR scanning at check-in uses
+`html5-qrcode`, loaded dynamically so it doesn't bloat the main bundle.
+That's basically the whole dependency list — five packages, no state library.
 
----
+## The database is already live
 
-## Status: the database is already built
+The Supabase project is running in production already, fully migrated. You
+don't need to run `supabase-schema.sql` — that file is just a flattened,
+single-file version of the 8 migrations, kept around in case we ever need to
+rebuild from scratch. Don't run it against the live project.
 
-The Supabase project is **live and fully migrated** — you do not need to run
-`supabase-schema.sql` (it is kept as a reference and for rebuilding from
-scratch).
+Project ref `ssuzhrvdtpakzbwsvlch`, Canada Central region. It's got 14 tables,
+RLS on all of them, audit triggers, the `guard_role_change` protections, four
+storage buckets, and real seed data (11 agenda sessions, 6 leads, 4
+highlights, 4 stats, 6 FAQs). Security advisors come back clean — 0 warnings.
 
-| | |
-| --- | --- |
-| Project ref | `ssuzhrvdtpakzbwsvlch` |
-| Region | Canada Central (`ca-central-1`) |
-| URL | `https://ssuzhrvdtpakzbwsvlch.supabase.co` |
-| Migrations applied | 8 (`01_enums_and_profiles` → `08_repoint_policies…`) |
-| Security advisors | **0 warnings** |
+## Getting set up (~15 min)
 
-Already in place: 14 tables, all RLS policies, audit triggers, the
-`guard_role_change` protections, four storage buckets, the `public_agenda`
-view, and live seed data — 11 agenda sessions, 6 leads, 4 highlights, 4 stats,
-6 FAQs.
-
-## Setup (about 15 minutes)
-
-### 1. Install
+Install and copy the env file:
 
 ```bash
 npm install
 cp .env.local.example .env.local
 ```
 
-`.env.local.example` already contains the real project URL and anon key. You
-only need to paste the **service_role** key (Supabase → Settings → API) and
-invent a `CRON_SECRET`.
+`.env.local.example` already has the real project URL and anon key filled
+in. You just need to grab the **service_role** key from Supabase (Settings →
+API) and make up a `CRON_SECRET`.
 
-### 2. What the schema file is for
+If you do ever need to rebuild the schema from scratch, `supabase-schema.sql`
+creates all 13 tables/enums with `status` + `sort_order` on every content
+table, RLS (public only ever sees `published` rows), audit triggers on
+everything, a check constraint that physically blocks publishing a speaker
+without a bio and headshot, the storage buckets (`headshots` 2MB, `logos`
+1MB, `gallery` 5MB), and the `public_agenda` view. You'd also need to add one
+more bucket by hand: **Storage → New bucket → `backups` → Private** — that's
+for the nightly backup cron and isn't in the SQL file.
 
-`supabase-schema.sql` is the single-file version of all 8 migrations, kept so
-the whole stack can be rebuilt in a fresh project. **Do not run it against the
-live project** — it is already applied. It creates:
+**Google login** — enable it under Authentication → Providers → Google, then
+create an OAuth client in Google Cloud Console and add Supabase's callback
+URL as an authorized redirect. Under Authentication → URL Configuration, add
+both `http://localhost:3000/auth/callback` and your production callback URL.
 
-- 13 tables + enums, with `status` and `sort_order` on all content
-- Row-level security: public reads `published` only; writes are role-scoped
-- Audit triggers on every content table (nothing can bypass the log)
-- A check constraint that **physically blocks** publishing a speaker without a
-  bio and headshot
-- Storage buckets `headshots` (2 MB), `logos` (1 MB), `gallery` (5 MB)
-- The `public_agenda` view
-- Your current site content as seed data
-
-Then create one more bucket by hand for the nightly backup:
-**Storage → New bucket → `backups` → Private.**
-
-### 4. Enable Google login
-
-1. **Authentication → Providers → Google → Enable**
-2. Create an OAuth client in Google Cloud Console; add Supabase's callback URL
-   as an authorised redirect URI (Supabase shows it on that page).
-3. **Authentication → URL Configuration** → add redirect URLs:
-   - `http://localhost:3000/auth/callback`
-   - `https://your-domain.com/auth/callback`
-
-### 5. Fill `.env.local`
-
-Copy from **Supabase → Settings → API**:
+**Fill in `.env.local`** with values from Supabase → Settings → API:
 
 ```
 NEXT_PUBLIC_SUPABASE_URL=...
@@ -100,165 +73,122 @@ NEXT_PUBLIC_SITE_URL=http://localhost:3000
 CRON_SECRET=<any long random string>
 ```
 
-The anon key is safe in the browser: RLS is what protects the data, and it only
-ever exposes `status = 'published'` rows. The **service role key bypasses RLS**
-— it is used only by the two cron routes and must never be prefixed
-`NEXT_PUBLIC_`.
+The anon key is fine to expose in the browser — RLS is the actual boundary,
+and it only ever returns `published` rows. The service role key bypasses RLS
+entirely, so it's only used in the two cron routes and should never end up
+prefixed `NEXT_PUBLIC_`.
 
-### 6. Make yourself the owner
-
-```bash
-npm run dev
-```
-
-Visit `/login` and sign in with Google once. A trigger creates your profile
-with role `program`. Promote yourself in the SQL Editor:
+**Make yourself the owner.** Run `npm run dev`, sign in with Google once at
+`/login`. A trigger creates your profile as `program` by default. Bump
+yourself to owner in the SQL editor:
 
 ```sql
 update profiles set role = 'owner' where email = 'you@example.com';
 ```
 
-Then have each lead sign in once and assign their role from
-**/admin/users** — or in SQL:
+Then get everyone else to sign in once and assign roles from
+`/admin/users`, or do it in SQL — three owners, three admins, whatever split
+makes sense. `program`, `comms`, `partnerships` and `volunteer` are there for
+helpers who join later; door volunteers on event day should get `volunteer`
+so they only see check-in.
 
-```sql
--- three owners
-update profiles set role = 'owner', active = true
- where email in ('neel@…', 'nayan@…', 'sohel@…');
-
--- three admins: everything except user management and hard deletes
-update profiles set role = 'admin', active = true
- where email in ('riya@…', 'alshifa@…', 'abhijot@…');
-```
-
-`program`, `comms`, `partnerships` and `volunteer` stay available for helpers
-you bring on later — including day-of door volunteers, who should get
-`volunteer` so they see nothing but check-in.
-
-### 7. Deploy
+**Deploying:**
 
 ```bash
 git init && git add -A && git commit -m "Initial commit"
 gh repo create aws-community-day --private --source=. --push
 ```
 
-On Vercel: **Add New → Project → import the repo**, then
-
-1. Add every variable from `.env.local` (set `NEXT_PUBLIC_SITE_URL` to the
-   production domain).
-2. Deploy.
-3. Add the production `/auth/callback` URL to Supabase redirect URLs.
-4. Cron jobs register automatically from `vercel.json`.
-
----
+Import the repo on Vercel, add every var from `.env.local` (with
+`NEXT_PUBLIC_SITE_URL` pointing at the real domain), deploy, then add the
+production `/auth/callback` URL to Supabase's redirect list. Cron jobs
+register automatically from `vercel.json`.
 
 ## How publishing works
 
-Public pages are **statically rendered** and revalidated on demand:
+Public pages are statically rendered with `revalidate = 3600` as a fallback,
+but saving or publishing something calls `revalidatePath()` for just the
+affected paths, so changes usually show up within a couple seconds — no
+redeploy needed. That's important because we edit the agenda live during the
+event.
 
-- Every content page exports `revalidate = 3600` as a safety net.
-- Saving or publishing a record calls `revalidatePath()` for only the affected
-  paths (`lib/collections.ts` → `revalidate: ['/']`).
-- A change is live in **about two seconds with no redeploy**, so the agenda can
-  safely be edited during the event itself.
-
-Three things deliberately read **live** instead:
-
-| What | Why |
-| --- | --- |
-| Announcement banner | Day-of room changes must be instant (also subscribes to Postgres realtime) |
-| Live agenda mode | Clock-driven, computed in the browser |
-| Countdown | Ticks every second client-side |
-
----
+A few things intentionally read live instead of from the static cache: the
+announcement banner (needs to be instant for room changes, subscribes to
+Postgres realtime), live agenda mode (tracks the clock), and the countdown.
 
 ## Roles
 
-Enforced twice: in the UI, and again by Postgres RLS. Hiding a button is not
-security — the policies are.
+Every permission is checked twice — once in the UI (so people don't even see
+buttons they can't use) and again by Postgres RLS, which is the part that
+actually matters. Hiding a button isn't security.
 
-| Role | Person | Can touch |
-| --- | --- | --- |
-| `pending` | **every new sign-in** | **Nothing.** Default for all new accounts |
-| `owner` | **Neel, Nayan, Sohel** | Everything, incl. users and hard deletes |
-| `admin` | **Riya, Alshifa, Abhijot** | All content + publishing, no user management |
-| `program` | future helpers | Agenda, speakers |
-| `comms` | future helpers | Announcements, gallery, FAQ, highlights, stats, team |
-| `partnerships` | future helpers | Sponsors, speakers (drafts need owner approval) |
-| `volunteer` | Door helpers | Check-in only — nothing else renders |
+New sign-ins default to `pending` and can't touch anything until an owner
+promotes them. Owners (Neel, Nayan, Sohel) can do everything including
+managing users and hard deletes. Admins (Riya, Alshifa, Abhijot) can touch
+all content and publish, just not manage users. Below that, `program`,
+`comms`, `partnerships`, and `volunteer` are scoped to specific sections for
+future helpers — `volunteer` only sees check-in.
 
-Editors **archive**; only owners can hard-delete. Set `active = false` on a
-profile to revoke access instantly.
+Regular editors can only archive records; hard delete is owner-only, and
+setting `active = false` on a profile revokes access immediately. We
+deliberately have three owners so there's no single point of failure if
+someone's unreachable during the event, but that's also three accounts that
+can delete things — use `admin` for anyone who doesn't specifically need
+that power.
 
-Three owners means no single point of failure if someone is unreachable during
-the event — but it also means three accounts that can delete data. Use `admin`
-for anyone who does not need that.
+## Security
 
----
+Worth reading before launch, not after something goes wrong.
 
-## Security model
+The important default: every new Google sign-in starts as `pending` with
+`active = false`, set by the `handle_new_user` trigger. Signing in grants
+nothing on its own — an owner has to promote the account from
+`/admin/users`. An earlier version of this defaulted new users to `program`,
+which would've handed out agenda/speaker write access to literally anyone
+with a Google account. Don't change that default back.
 
-Read this before launch.
+There are four layers: edge middleware blocks `/admin/*` before any HTML
+ships if there's no session; server guards (`requireProfile()`,
+`requireSection()`) re-check on every request and treat `pending`/deactivated
+accounts as logged out; row-level security is the real backstop — every
+policy calls `has_role()`, so even a leaked anon key or a hand-crafted
+request can't read a draft or write a row; and all mutations go through
+Server Actions that call `guard()` first, so nothing is writable directly
+from the browser.
 
-### The important default
-**Every new Google sign-in is created as `pending` and `active = false`** by the
-`handle_new_user` trigger. Signing in grants *nothing* — no reads, no writes.
-An owner must promote the account from `/admin/users`. This is deliberate: an
-earlier draft defaulted new users to `program`, which would have handed agenda
-and speaker write access to anyone with a Google account. Do not change that
-default.
+Some specifics: a `guard_role_change` trigger stops you from changing your
+own role or demoting the last owner. The anon key only ever sees
+`published` rows — drafts, check-ins, profiles, and the audit log are
+invisible to it. The service-role key only lives in the two cron routes. Both
+cron endpoints require `Authorization: Bearer $CRON_SECRET`. The audit log
+table revokes `update`/`delete` entirely, so entries can only be inserted by
+a `SECURITY DEFINER` trigger — nothing can edit history after the fact. A DB
+check constraint blocks publishing a speaker without a bio and headshot.
+Speaker `announce_at` is enforced in the RLS policy itself, not the UI, so
+early announcements can't be scraped by hitting the API directly. Attendee
+check-in data has no anon policy at all, so names never reach the public
+site. `/auth/callback` only accepts internal `next` paths, so it can't be
+used as an open redirect. There's an optional `ALLOWED_EMAIL_DOMAINS` gate on
+top of the `pending` default. `next.config.mjs` sets CSP, `X-Frame-Options:
+DENY`, `frame-ancestors 'none'`, `nosniff`, and HSTS. Camera access is
+locked to our own origin via `Permissions-Policy`. Admin pages send
+`no-store` and `noindex`. `ticket_code` has a unique index so nobody can be
+checked in twice.
 
-### Layers
-1. **Edge middleware** — `/admin/*` requires a session before any HTML is sent.
-2. **Server guards** — `requireProfile()` / `requireSection()` re-check on every
-   request; `pending` and deactivated accounts are treated as logged out.
-3. **Row-level security** — the real boundary. Every policy calls `has_role()`,
-   so a stolen anon key or a hand-crafted request still cannot read a draft or
-   write a row. Hiding a button is not security; these policies are.
-4. **Server Actions** — all mutations run server-side and call `guard()` first.
-   No table is writable from the browser.
+I ran a set of queries as the `anon` role directly against production (with
+a draft row planted first) to confirm the policies actually hold: draft rows
+returned zero, check-ins zero, profiles zero, audit log zero, and the stats
+table only returned the 4 published rows. Advisors: 0 warnings.
 
-### Specific protections
-| Risk | Mitigation |
-| --- | --- |
-| Privilege escalation | `guard_role_change` trigger blocks changing your own role, and blocks demoting the last owner |
-| Anon key leaking data | RLS exposes only `status = 'published'`; drafts, check-ins, profiles and the audit log are invisible to `anon` |
-| Service-role key exposure | Used only in the two cron routes; never prefixed `NEXT_PUBLIC_` |
-| Cron endpoints being hit publicly | Both require `Authorization: Bearer $CRON_SECRET` |
-| Audit tampering | `revoke update, delete on audit_log`; inserts happen only inside a `SECURITY DEFINER` trigger |
-| Incomplete content going live | DB check constraint blocks publishing a speaker without bio + headshot |
-| Early speaker leaks | `announce_at` is enforced in the RLS policy, not the UI, so it cannot be scraped early |
-| Attendee PII | `checkins` has no anon policy at all — names never reach the public site |
-| Open redirect on login | `/auth/callback` only accepts internal `next` paths |
-| Outsiders reaching login | Optional `ALLOWED_EMAIL_DOMAINS` gate, plus the `pending` default behind it |
-| XSS / clickjacking | CSP, `X-Frame-Options: DENY`, `frame-ancestors 'none'`, `nosniff`, HSTS in `next.config.mjs` |
-| Camera abuse | `Permissions-Policy: camera=(self)` — only our own origin may open it |
-| Admin pages cached | `/admin/*` sends `no-store` and `noindex` |
-| Duplicate check-ins | Unique index on `ticket_code` |
-
-### Verified on the live project
-Ran as the `anon` role against production, with a draft row planted first:
-
-| Query | Result |
-| --- | --- |
-| `select count(*) from stats` | 4 (published only) |
-| `… where status = 'draft'` | **0** |
-| `select count(*) from checkins` | **0** |
-| `select count(*) from profiles` | **0** |
-| `select count(*) from audit_log` | **0** |
-
-Supabase security advisors: **0 warnings.**
-
-### Launch checklist
-- [ ] `SUPABASE_SERVICE_ROLE_KEY` set in Vercel only, never committed
-- [ ] `CRON_SECRET` is a long random string
-- [ ] `ALLOWED_EMAIL_DOMAINS` set to your real college domains
-- [ ] All six leads signed in once and promoted; any stranger left `pending`
-- [ ] Confirm the four numbers at `/admin/stats` are accurate
-- [ ] Verify `/admin` redirects to `/login` in a private window
-- [ ] Confirm a `pending` account sees the "Access pending" screen and no data
-
----
+Before launch:
+- `SUPABASE_SERVICE_ROLE_KEY` is set in Vercel only, never committed
+- `CRON_SECRET` is a long random string
+- `ALLOWED_EMAIL_DOMAINS` is set to the real college domains
+- everyone who needs access has signed in once and been promoted; anyone
+  else is still `pending`
+- the numbers on `/admin/stats` are accurate
+- `/admin` redirects to `/login` in a private window
+- a `pending` account sees "access pending" and nothing else
 
 ## Project layout
 
@@ -273,7 +203,7 @@ app/
     layout.tsx                 Sidebar + publish bar; computes the pending-change diff
     stats/  (via [collection]) Editable home-page numbers
     page.tsx                   Dashboard: KPIs, readiness checks, recent activity
-    [collection]/page.tsx      ONE generic screen serving 9 collections  ← rename me
+    [collection]/page.tsx      one generic screen serving 9 collections
     settings/  checkin/  activity/
   api/cron/luma-sync/          Daily registration count from Luma
   api/cron/backup/             Nightly JSON snapshot to Storage
@@ -291,43 +221,36 @@ lib/
   types.ts        Database types
 ```
 
-### Adding a new editable section
+Adding a new editable section is three steps: add an entry to `COLLECTIONS`
+in `lib/collections.ts`, add a three-line `app/admin/<key>/page.tsx`
+wrapping `<CollectionScreen>`, and add the table + RLS policy in SQL plus a
+read in `lib/queries.ts`. That gets you a full table, drawer form, reorder,
+publish and archive with no new components to write.
 
-1. Add one entry to `COLLECTIONS` in `lib/collections.ts`.
-2. Add `app/admin/<key>/page.tsx` — three lines wrapping `<CollectionScreen>`.
-3. Add the table + RLS policy in SQL, and a read in `lib/queries.ts`.
+## A few implementation notes
 
-You get a working table, drawer form, reorder, publish and archive with no new
-components.
+The agenda flight path (`components/site/AgendaFlightPath.tsx`) tracks
+whatever session is centered in the viewport and highlights it as you
+scroll. Once we're between the first session's start and the last one's end,
+it switches into live mode and just tracks whatever's actually happening,
+ignoring scroll position. Under 720px the rail moves to the left edge and
+cards stack.
 
----
+Check-in (`components/admin/CheckinConsole.tsx`) queues scans in
+`localStorage` first and drains them in the background, so a dropped
+connection at the door doesn't stall the line. Duplicate scans get caught by
+a unique index and reported as "already checked in." The scanner debounces
+repeat reads for 3 seconds and vibrates on a successful scan. It'll accept
+either a bare ticket code or a JSON payload like
+`{"name":"Jane Doe","code":"ABC123"}` — use the JSON form if you're
+generating your own passes so names show up in the log.
 
-## Notable implementation details
+Scroll reveal (`components/site/Reveal.tsx`) uses an IntersectionObserver
+with a hard 2.5s fallback timer, so nothing gets stuck invisible if the
+observer misbehaves on some unusual viewport.
 
-**Agenda flight path** (`components/site/AgendaFlightPath.tsx`) — the rocket
-tracks whichever session is at the viewport centre and highlights it. Between
-the first `starts_at` and last `ends_at` it switches to **LIVE mode** and parks
-on the session actually happening, ignoring scroll. Below 720px the rail moves
-to the left edge and cards stack on one side.
-
-**Offline check-in** (`components/admin/CheckinConsole.tsx`) — scans are pushed
-to a `localStorage` queue first and drained by an effect, so a dropped
-connection in a packed room never stalls the door. Duplicate tickets are caught
-by a unique index and reported as "Already checked in". The scanner debounces
-repeat decodes for 3 seconds and vibrates on success.
-
-**Scroll reveal** (`components/site/Reveal.tsx`) — IntersectionObserver plus a
-hard 2.5s fallback timer, so content can never be stranded invisible if the
-observer fails in an unusual viewport.
-
-**QR payload** — accepts either a bare ticket code or JSON:
-`{"name":"Jane Doe","code":"ABC123"}`. If you generate your own passes, use the
-JSON form so the name appears in the log.
-
-**Speaker reveal scheduling** — set `announce_at` and RLS hides the speaker from
-the public until that moment. No cron needed; the policy does it.
-
----
+Speaker reveal scheduling just sets `announce_at` on the record — RLS hides
+it from the public until that timestamp passes, no cron job required.
 
 ## Commands
 
@@ -337,40 +260,29 @@ npm run build      # production build
 npm run typecheck  # tsc --noEmit
 ```
 
----
+## Vercel free tier, two things to know
 
-## Two Vercel free-tier limits
+Hobby cron only allows 2 jobs once a day each, which is exactly what
+`vercel.json` uses — if you want hourly registration syncs you'll need to
+trigger it manually or move to Pro. Also, Hobby's terms are non-commercial;
+a student club event is fine, but if the site ever takes paid sponsorship
+directly, check the terms or move to a paid plan.
 
-1. **Cron:** Hobby allows 2 jobs, once per day each — exactly what
-   `vercel.json` uses. For an hourly registration refresh, trigger it from the
-   dashboard or upgrade to Pro.
-2. **Hobby terms are non-commercial.** A student club event is fine. If you
-   ever take paid sponsorship through the site, review the terms or move the
-   project to a Pro account.
+## Handing this off next year
 
----
-
-## Handover checklist for next year's exec
-
-- [ ] Supabase, Vercel and the domain all sit on the **club** Google account
-- [ ] At least two people hold `owner`
-- [ ] Nightly backups landing in the `backups` bucket
-- [ ] Graduating leads set to `active = false`
-- [ ] To reset for 2027: update `event_settings`, archive old speakers and
-      gallery items, keep agenda structure as a template
-
----
+Make sure Supabase, Vercel, and the domain all live on the club's Google
+account, not a personal one. Keep at least two people on `owner`. Check that
+nightly backups are actually landing in the `backups` bucket. Set graduating
+leads to `active = false`. To reset for next year: update
+`event_settings`, archive old speakers and gallery items, and keep the
+agenda structure as a template rather than starting from scratch.
 
 ## Design reference
 
-The approved HTML prototypes live one level up in the project and are the
-visual source of truth:
-
-- `index.dc.html` — home page
-- `team.dc.html`, `speakers.dc.html`, `members.dc.html` — public pages
-- `Admin.dc.html` — the admin dashboard (clickable, mock data)
-- `Backend Plan.dc.html` — architecture rationale
-
-These are **references**, not code to copy. This Next.js app is the real
-implementation; every colour, size and interaction has already been carried
-across from them into `lib/tokens.ts` and the components.
+The approved HTML prototypes live one directory up and are the visual source
+of truth — `index.dc.html`, `team.dc.html`, `speakers.dc.html`,
+`members.dc.html`, `Admin.dc.html` (clickable, mock data), and `Backend
+Plan.dc.html` for the architecture rationale. They're references, not code
+to copy — this app is the real implementation, and every color, size and
+interaction from them has already been carried over into `lib/tokens.ts` and
+the components.
