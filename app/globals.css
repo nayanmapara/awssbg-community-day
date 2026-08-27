@@ -1,0 +1,39 @@
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&display=swap');
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: #0a0f1c;
+  color: #e7ebf3;
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  -webkit-font-smoothing: antialiased;
+  text-wrap: pretty;
+}
+
+a { color: #4da8ff; text-decoration: none; }
+a:hover { color: #7cc3ff; }
+::selection { background: #4da8ff; color: #0a0f1c; }
+
+input, textarea, select, button { font-family: inherit; }
+input:focus-visible, textarea:focus-visible, select:focus-visible, button:focus-visible {
+  outline: 2px solid #4da8ff;
+  outline-offset: 1px;
+}
+::placeholder { color: #3d4a68; }
+
+@keyframes gridDrift { from { background-position: 0 0, 0 0; } to { background-position: 56px 56px, 56px 56px; } }
+@keyframes softFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-14px); } }
+@keyframes blink { 0%, 50% { opacity: 1; } 51%, 100% { opacity: 0.25; } }
+@keyframes pulseRing { from { transform: scale(1); opacity: 0.6; } to { transform: scale(1.35); opacity: 0; } }
+@keyframes radarSweep { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+@keyframes trailFade { from { opacity: 1; transform: scale(1); } to { opacity: 0; transform: scale(0.3); } }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
