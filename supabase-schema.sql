@@ -535,6 +535,80 @@ group by a.id
 order by a.sort_order, a.starts_at;
 
 -- ---------------------------------------------------------------------------
+-- PERFORMANCE: single-round-trip reorder and admin sidebar draft counts
+-- ---------------------------------------------------------------------------
+
+-- Swaps sort_order with the row's neighbour in one round trip instead of the
+-- three sequential queries (select, update, update) the reorder action used
+-- to make, which is what made the up/down buttons feel laggy.
+create or replace function swap_sort_order(
+  p_table text,
+  p_id_a  uuid,
+  p_dir   integer
+) returns void
+language plpgsql
+security invoker      -- runs as the caller, so RLS still applies
+set search_path = public
+as $$
+declare
+  v_allowed text[] := array[
+    'agenda_items','speakers','team_members','sponsors',
+    'highlights','stats','faqs','gallery_items','announcements'
+  ];
+  v_order_a integer;
+  v_id_b    uuid;
+  v_order_b integer;
+begin
+  -- Whitelist the table name: it is interpolated into dynamic SQL below.
+  if not (p_table = any(v_allowed)) then
+    raise exception 'Table not reorderable: %', p_table;
+  end if;
+
+  execute format('select sort_order from %I where id = $1', p_table)
+    into v_order_a using p_id_a;
+  if v_order_a is null then return; end if;
+
+  if p_dir < 0 then
+    execute format(
+      'select id, sort_order from %I
+        where status <> ''archived'' and sort_order < $1
+        order by sort_order desc limit 1', p_table)
+      into v_id_b, v_order_b using v_order_a;
+  else
+    execute format(
+      'select id, sort_order from %I
+        where status <> ''archived'' and sort_order > $1
+        order by sort_order asc limit 1', p_table)
+      into v_id_b, v_order_b using v_order_a;
+  end if;
+
+  if v_id_b is null then return; end if;   -- already at the end
+
+  execute format('update %I set sort_order = $1 where id = $2', p_table)
+    using v_order_b, p_id_a;
+  execute format('update %I set sort_order = $1 where id = $2', p_table)
+    using v_order_a, v_id_b;
+end $$;
+
+revoke all on function swap_sort_order(text, uuid, integer) from public, anon;
+grant execute on function swap_sort_order(text, uuid, integer) to authenticated;
+
+-- One query for the admin sidebar's per-section draft badges and the publish
+-- diff, instead of fanning out one query per publishable table on every admin
+-- navigation. security_invoker so each editor's role-based RLS still applies
+-- to what shows up here — mirrors public_agenda above.
+create or replace view pending_drafts
+with (security_invoker = true) as
+  select 'agenda'      as section, id::text, title           as label from agenda_items   where status = 'draft'
+  union all select 'speakers',    id::text, name                     from speakers        where status = 'draft'
+  union all select 'team',        id::text, name                     from team_members    where status = 'draft'
+  union all select 'sponsors',    id::text, name                     from sponsors        where status = 'draft'
+  union all select 'highlights',  id::text, title                    from highlights      where status = 'draft'
+  union all select 'stats',       id::text, label                    from stats           where status = 'draft'
+  union all select 'faqs',        id::text, question                 from faqs            where status = 'draft'
+  union all select 'gallery',     id::text, coalesce(caption, 'Untitled photo') from gallery_items where status = 'draft';
+
+-- ---------------------------------------------------------------------------
 -- SEED: current site content
 -- ---------------------------------------------------------------------------
 insert into event_settings (

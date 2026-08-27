@@ -3,10 +3,12 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { c } from '@/lib/tokens';
 import type { AgendaItem } from '@/lib/types';
 
-const fmt = (iso: string) =>
-  new Date(iso).toLocaleTimeString('en-CA', { hour: 'numeric', minute: '2-digit' });
+// Constructing an Intl.DateTimeFormat is expensive; build it once at module
+// scope and reuse it, instead of doing it inline in the render path where a
+// scroll-driven re-render would rebuild it dozens of times a second.
+const TIME_FMT = new Intl.DateTimeFormat('en-CA', { hour: 'numeric', minute: '2-digit' });
 
-const range = (a: string, b: string) => `${fmt(a)} – ${fmt(b)}`;
+type Row = AgendaItem & { startMs: number; endMs: number; timeLabel: string };
 
 /**
  * The rocket tracks whichever session sits at the viewport centre, so it reads
@@ -17,9 +19,55 @@ const range = (a: string, b: string) => `${fmt(a)} – ${fmt(b)}`;
  */
 export function AgendaFlightPath({ items }: { items: AgendaItem[] }) {
   const trackRef = useRef<HTMLDivElement>(null);
-  const [progress, setProgress] = useState(0);
+  const railFillRef = useRef<HTMLDivElement>(null);
+  const rocketRef = useRef<HTMLDivElement>(null);
+
+  const [activeIndex, setActiveIndex] = useState(0);
   const [isMobile, setIsMobile] = useState(false);
   const [now, setNow] = useState<number | null>(null);
+
+  // Precompute labels and millisecond timestamps once per items change,
+  // instead of re-formatting and re-parsing dates on every render.
+  const rows = useMemo<Row[]>(
+    () => items.map((item) => ({
+      ...item,
+      startMs: new Date(item.starts_at).getTime(),
+      endMs: new Date(item.ends_at).getTime(),
+      timeLabel: `${TIME_FMT.format(new Date(item.starts_at))} – ${TIME_FMT.format(new Date(item.ends_at))}`,
+    })),
+    [items]
+  );
+
+  const liveIndex = useMemo(() => {
+    if (now === null || rows.length === 0) return -1;
+    const first = rows[0].startMs;
+    const last = rows[rows.length - 1].endMs;
+    if (now < first || now > last) return -1;
+    return rows.findIndex((r) => now >= r.startMs && now <= r.endMs);
+  }, [now, rows]);
+
+  const isLive = liveIndex >= 0;
+  const n = rows.length;
+
+  // The scroll listener below is attached once on mount; these refs let it
+  // read the latest isLive/length without needing to re-subscribe.
+  const isLiveRef = useRef(isLive);
+  isLiveRef.current = isLive;
+  const rowsLenRef = useRef(n);
+  rowsLenRef.current = n;
+
+  // Writes the continuous scroll position straight to the DOM instead of
+  // through React state, so scrolling doesn't re-render the whole list — and
+  // its ~8 inline-styled elements per row — on every animation frame.
+  const applyPosition = (pct: number) => {
+    const clamped = Math.max(0, Math.min(1, pct));
+    if (railFillRef.current) railFillRef.current.style.height = `${clamped * 100}%`;
+    if (rocketRef.current) {
+      rocketRef.current.style.top = `${clamped * 100}%`;
+      rocketRef.current.style.transform =
+        `translate(-50%,-50%) rotate(${180 + Math.sin(clamped * 22) * 9}deg)`;
+    }
+  };
 
   useEffect(() => {
     const mq = window.matchMedia('(max-width: 720px)');
@@ -30,47 +78,50 @@ export function AgendaFlightPath({ items }: { items: AgendaItem[] }) {
     setNow(Date.now());
     const clock = setInterval(() => setNow(Date.now()), 30000);
 
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
     let queued = false;
     const onScroll = () => {
       if (queued) return;
       queued = true;
       requestAnimationFrame(() => {
         queued = false;
+        if (isLiveRef.current) return; // live mode owns the position instead
         const el = trackRef.current;
         if (!el) return;
         const r = el.getBoundingClientRect();
         const focus = window.innerHeight * 0.5;
-        setProgress(Math.max(0, Math.min(1, (focus - r.top) / Math.max(1, r.height))));
+        const pct = Math.max(0, Math.min(1, (focus - r.top) / Math.max(1, r.height)));
+        applyPosition(pct);
+        const nextActive = Math.round(pct * Math.max(1, rowsLenRef.current - 1));
+        setActiveIndex((prev) => (prev === nextActive ? prev : nextActive));
       });
     };
-    window.addEventListener('scroll', onScroll, { passive: true });
-    onScroll();
+
+    // Scroll-driven motion is exactly what prefers-reduced-motion asks us to
+    // skip; the rocket just stays parked (LIVE mode below still applies).
+    if (!reducedMotion) {
+      window.addEventListener('scroll', onScroll, { passive: true });
+      onScroll();
+    }
 
     return () => {
       mq.removeEventListener('change', sync);
-      window.removeEventListener('scroll', onScroll);
+      if (!reducedMotion) window.removeEventListener('scroll', onScroll);
       clearInterval(clock);
     };
   }, []);
 
-  const liveIndex = useMemo(() => {
-    if (now === null || items.length === 0) return -1;
-    const first = new Date(items[0].starts_at).getTime();
-    const last = new Date(items[items.length - 1].ends_at).getTime();
-    if (now < first || now > last) return -1;
-    return items.findIndex(
-      (it) => now >= new Date(it.starts_at).getTime() && now <= new Date(it.ends_at).getTime()
-    );
-  }, [now, items]);
-
-  const isLive = liveIndex >= 0;
-  const n = items.length;
-  const p = isLive ? liveIndex / Math.max(1, n - 1) : progress;
-  const activeIndex = isLive ? liveIndex : Math.round(p * (n - 1));
+  // LIVE mode is clock-driven, not scroll-driven, so it sets the position
+  // here instead of through the scroll handler above.
+  useEffect(() => {
+    if (!isLive || n === 0) return;
+    applyPosition(liveIndex / Math.max(1, n - 1));
+    setActiveIndex((prev) => (prev === liveIndex ? prev : liveIndex));
+  }, [isLive, liveIndex, n]);
 
   const railLeft = isMobile ? '11px' : '50%';
   const cols = isMobile ? '0px 22px 1fr' : '1fr 32px 1fr';
-  const rocketAngle = 180 + Math.sin(p * 22) * 9;
 
   if (n === 0) {
     return (
@@ -91,8 +142,8 @@ export function AgendaFlightPath({ items }: { items: AgendaItem[] }) {
         >
           <span style={{ width: 8, height: 8, background: c.accent, animation: 'blink 1.6s step-end infinite' }} />
           <span style={{ fontSize: 12, letterSpacing: '0.06em', color: c.accentHi, fontWeight: 700 }}>
-            LIVE NOW — {items[liveIndex].title}
-            {items[liveIndex].room ? ` · ${items[liveIndex].room}` : ''}
+            LIVE NOW — {rows[liveIndex].title}
+            {rows[liveIndex].room ? ` · ${rows[liveIndex].room}` : ''}
           </span>
         </div>
       )}
@@ -100,18 +151,20 @@ export function AgendaFlightPath({ items }: { items: AgendaItem[] }) {
       <div ref={trackRef} style={{ position: 'relative', padding: '20px 0 40px' }}>
         <div style={{ position: 'absolute', left: railLeft, top: 0, bottom: 0, width: 2, background: c.line, transform: 'translateX(-50%)' }} />
         <div
+          ref={railFillRef}
           style={{
             position: 'absolute', left: railLeft, top: 0, width: 2,
             background: `linear-gradient(${c.accent},${c.accentHi})`,
             boxShadow: '0 0 16px 2px rgba(77,168,255,0.55)',
-            transform: 'translateX(-50%)', height: `${p * 100}%`,
+            transform: 'translateX(-50%)', height: 0,
             transition: isLive ? 'height .6s ease' : 'height .05s linear',
           }}
         />
         <div
+          ref={rocketRef}
           style={{
-            position: 'absolute', left: railLeft, top: `${p * 100}%`, zIndex: 3,
-            transform: `translate(-50%,-50%) rotate(${rocketAngle}deg)`,
+            position: 'absolute', left: railLeft, top: 0, zIndex: 3,
+            transform: 'translate(-50%,-50%) rotate(180deg)',
             transition: isLive ? 'top .6s ease' : 'top .05s linear',
             filter: 'drop-shadow(0 0 8px rgba(77,168,255,0.7))',
           }}
@@ -127,8 +180,8 @@ export function AgendaFlightPath({ items }: { items: AgendaItem[] }) {
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16, position: 'relative', zIndex: 1 }}>
-          {items.map((item, i) => {
-            const passed = i / Math.max(1, n - 1) <= p + 0.001;
+          {rows.map((item, i) => {
+            const passed = i <= activeIndex;
             const isActive = i === activeIndex;
             const onLeft = !isMobile && i % 2 === 0;
 
@@ -146,7 +199,7 @@ export function AgendaFlightPath({ items }: { items: AgendaItem[] }) {
                 }}
               >
                 <div style={{ fontSize: 11, color: isActive ? c.accentHi : c.accent, fontWeight: 700, letterSpacing: '0.05em' }}>
-                  {range(item.starts_at, item.ends_at)}
+                  {item.timeLabel}
                 </div>
                 <div
                   style={{
@@ -170,12 +223,15 @@ export function AgendaFlightPath({ items }: { items: AgendaItem[] }) {
                 <div
                   style={{
                     justifySelf: 'center',
-                    width: isActive ? 16 : 12, height: isActive ? 16 : 12, borderRadius: '50%',
+                    width: 16, height: 16, borderRadius: '50%',
                     background: passed ? c.accent : c.borderMid, border: `2px solid ${c.bg}`,
                     boxShadow: isActive
                       ? '0 0 14px 4px rgba(77,168,255,0.85)'
                       : passed ? '0 0 8px 1px rgba(77,168,255,0.45)' : 'none',
-                    transition: 'all .3s ease',
+                    // Scale via transform (compositor-only) instead of animating
+                    // width/height, which would force layout on every frame.
+                    transform: isActive ? 'scale(1)' : 'scale(0.75)',
+                    transition: 'transform .3s ease, background-color .3s ease, box-shadow .3s ease',
                   }}
                 />
                 <div style={{ display: 'flex', justifyContent: 'flex-start' }}>{onLeft ? null : card}</div>

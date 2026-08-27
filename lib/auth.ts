@@ -1,3 +1,4 @@
+import { cache } from 'react';
 import { redirect } from 'next/navigation';
 import { createClient } from './supabase/server';
 import type { Profile } from './types';
@@ -5,8 +6,16 @@ import type { Profile } from './types';
 export { ROLE_ACCESS, ROLE_LABELS, CAN_PUBLISH, can } from './roles';
 import { can } from './roles';
 
-/** Server-side guard. Redirects to /login when there is no active profile. */
-export async function requireProfile(): Promise<Profile> {
+/**
+ * Server-side guard. Redirects to /login when there is no active profile.
+ *
+ * The layout, the page, and every server action on that page all call this,
+ * which used to mean 2 network round trips (auth + profile select) each time.
+ * `cache()` memoises it per request, so it resolves once no matter how many
+ * call sites hit it during a single navigation or action. This does not leak
+ * across requests/users — React's cache is request-scoped.
+ */
+export const requireProfile = cache(async function requireProfile(): Promise<Profile> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect('/login');
@@ -21,7 +30,7 @@ export async function requireProfile(): Promise<Profile> {
     redirect('/login');
   }
   return profile as Profile;
-}
+});
 
 export async function requireSection(section: string): Promise<Profile> {
   const profile = await requireProfile();

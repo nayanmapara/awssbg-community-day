@@ -1,6 +1,5 @@
 'use client';
 import { useState, useTransition } from 'react';
-import { useRouter } from 'next/navigation';
 import { c } from '@/lib/tokens';
 import { upsertRecord } from '@/lib/actions';
 import { createClient } from '@/lib/supabase/client';
@@ -35,7 +34,6 @@ export function RecordDrawer({
   const [pending, start] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [uploading, setUploading] = useState<string | null>(null);
-  const router = useRouter();
 
   const set = (k: string, v: string) => setValues((s) => ({ ...s, [k]: v }));
 
@@ -65,7 +63,6 @@ export function RecordDrawer({
       const res = await upsertRecord(spec.key, (record?.id as string) ?? null, payload, publish);
       if (!res.ok) { setError(res.error ?? 'Save failed'); return; }
       onClose();
-      router.refresh();
     });
   };
 

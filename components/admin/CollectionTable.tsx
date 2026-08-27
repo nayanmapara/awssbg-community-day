@@ -1,12 +1,15 @@
 'use client';
-import { useState, useTransition } from 'react';
-import { useRouter } from 'next/navigation';
+import { useOptimistic, useState, useTransition } from 'react';
 import { c } from '@/lib/tokens';
 import { archiveRecord, reorder, setStatus } from '@/lib/actions';
 import { RecordDrawer } from './RecordDrawer';
 import type { CollectionSpec } from '@/lib/collections';
 
 type Row = Record<string, unknown> & { id: string; status?: string };
+
+type RowAction =
+  | { type: 'move'; id: string; dir: -1 | 1 }
+  | { type: 'status'; id: string; status: string };
 
 const fmtCell = (spec: CollectionSpec, row: Row, key: string): string => {
   const raw = row[key];
@@ -33,17 +36,41 @@ export function CollectionTable({
 }) {
   const [drawer, setDrawer] = useState<{ record: Row | null } | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [pendingId, setPendingId] = useState<string | null>(null);
   const [, start] = useTransition();
-  const router = useRouter();
+
+  // Applies reorder/status changes to the row list the instant a button is
+  // clicked, before the ~9 sequential network hops a click used to cost have
+  // even started, instead of leaving the row looking frozen until they finish.
+  const [optimisticRows, applyOptimistic] = useOptimistic(
+    rows,
+    (state: Row[], action: RowAction): Row[] => {
+      if (action.type === 'move') {
+        const next = [...state];
+        const i = next.findIndex((r) => r.id === action.id);
+        const j = i + action.dir;
+        if (i < 0 || j < 0 || j >= next.length) return state;
+        [next[i], next[j]] = [next[j], next[i]];
+        return next;
+      }
+      return state.map((r) => (r.id === action.id ? { ...r, status: action.status } : r));
+    }
+  );
 
   const grid = [...spec.columns.map((c2) => c2.width), '1fr'].join(' ');
 
-  const run = (fn: () => Promise<{ ok: boolean; error?: string }>) =>
+  // The server action's own revalidatePath() call refreshes this route's data
+  // as part of the action response — an extra router.refresh() would just
+  // trigger a second, redundant full round trip.
+  const run = (id: string, fn: () => Promise<{ ok: boolean; error?: string }>, optimistic?: RowAction) => {
+    setPendingId(id);
     start(async () => {
+      if (optimistic) applyOptimistic(optimistic);
       const res = await fn();
-      if (!res.ok) setError(res.error ?? 'Action failed');
-      else { setError(null); router.refresh(); }
+      setPendingId(null);
+      setError(res.ok ? null : (res.error ?? 'Action failed'));
     });
+  };
 
   return (
     <>
@@ -84,13 +111,14 @@ export function CollectionTable({
           <div />
         </div>
 
-        {rows.length === 0 ? (
+        {optimisticRows.length === 0 ? (
           <div style={{ padding: 44, textAlign: 'center', color: c.faint, fontSize: 12 }}>
             Nothing here yet.
           </div>
         ) : (
-          rows.map((row, i) => {
+          optimisticRows.map((row, i) => {
             const published = row.status === 'published';
+            const rowBusy = pendingId === row.id;
             return (
               <div
                 key={row.id}
@@ -129,10 +157,14 @@ export function CollectionTable({
 
                   {canEdit && spec.reorderable !== false && (
                     <>
-                      <button onClick={() => run(() => reorder(spec.key, row.id, -1))} title="Move up" disabled={i === 0}
-                        style={{ background: 'none', border: `1px solid ${c.border}`, color: c.muted, width: 24, height: 24, fontSize: 11, cursor: i === 0 ? 'default' : 'pointer', opacity: i === 0 ? 0.4 : 1 }}>↑</button>
-                      <button onClick={() => run(() => reorder(spec.key, row.id, 1))} title="Move down" disabled={i === rows.length - 1}
-                        style={{ background: 'none', border: `1px solid ${c.border}`, color: c.muted, width: 24, height: 24, fontSize: 11, cursor: i === rows.length - 1 ? 'default' : 'pointer', opacity: i === rows.length - 1 ? 0.4 : 1 }}>↓</button>
+                      <button
+                        onClick={() => run(row.id, () => reorder(spec.key, row.id, -1), { type: 'move', id: row.id, dir: -1 })}
+                        title="Move up" disabled={i === 0 || rowBusy}
+                        style={{ background: 'none', border: `1px solid ${c.border}`, color: c.muted, width: 24, height: 24, fontSize: 11, cursor: i === 0 || rowBusy ? 'default' : 'pointer', opacity: i === 0 || rowBusy ? 0.4 : 1 }}>↑</button>
+                      <button
+                        onClick={() => run(row.id, () => reorder(spec.key, row.id, 1), { type: 'move', id: row.id, dir: 1 })}
+                        title="Move down" disabled={i === optimisticRows.length - 1 || rowBusy}
+                        style={{ background: 'none', border: `1px solid ${c.border}`, color: c.muted, width: 24, height: 24, fontSize: 11, cursor: i === optimisticRows.length - 1 || rowBusy ? 'default' : 'pointer', opacity: i === optimisticRows.length - 1 || rowBusy ? 0.4 : 1 }}>↓</button>
                     </>
                   )}
 
@@ -141,8 +173,13 @@ export function CollectionTable({
 
                       {row.status && canPublish && (
                         <button
-                          onClick={() => run(() => setStatus(spec.key, row.id, published ? 'draft' : 'published'))}
-                          style={{ background: 'none', border: `1px solid ${c.border}`, color: c.accent, padding: '0 8px', height: 24, fontSize: 10, cursor: 'pointer', letterSpacing: '0.04em' }}
+                          onClick={() => run(
+                            row.id,
+                            () => setStatus(spec.key, row.id, published ? 'draft' : 'published'),
+                            { type: 'status', id: row.id, status: published ? 'draft' : 'published' }
+                          )}
+                          disabled={rowBusy}
+                          style={{ background: 'none', border: `1px solid ${c.border}`, color: c.accent, padding: '0 8px', height: 24, fontSize: 10, cursor: rowBusy ? 'default' : 'pointer', letterSpacing: '0.04em', opacity: rowBusy ? 0.5 : 1 }}
                         >
                           {published ? 'UNPUBLISH' : 'PUBLISH'}
                         </button>
@@ -150,7 +187,8 @@ export function CollectionTable({
 
                       <button
                         onClick={() => setDrawer({ record: row })}
-                        style={{ background: c.accent, color: c.bg, border: 'none', padding: '0 10px', height: 24, fontSize: 10, fontWeight: 700, cursor: 'pointer', letterSpacing: '0.04em' }}
+                        disabled={rowBusy}
+                        style={{ background: c.accent, color: c.bg, border: 'none', padding: '0 10px', height: 24, fontSize: 10, fontWeight: 700, cursor: rowBusy ? 'default' : 'pointer', letterSpacing: '0.04em', opacity: rowBusy ? 0.5 : 1 }}
                       >
                         EDIT
                       </button>
@@ -158,10 +196,11 @@ export function CollectionTable({
                       {row.status && (
                         <button
                           onClick={() => {
-                            if (confirm('Archive this record? It stays recoverable.')) run(() => archiveRecord(spec.key, row.id));
+                            if (confirm('Archive this record? It stays recoverable.')) run(row.id, () => archiveRecord(spec.key, row.id));
                           }}
                           title="Archive"
-                          style={{ background: 'none', border: '1px solid #4a2530', color: c.danger, width: 24, height: 24, fontSize: 12, cursor: 'pointer' }}
+                          disabled={rowBusy}
+                          style={{ background: 'none', border: '1px solid #4a2530', color: c.danger, width: 24, height: 24, fontSize: 12, cursor: rowBusy ? 'default' : 'pointer', opacity: rowBusy ? 0.5 : 1 }}
                         >
                           ×
                         </button>

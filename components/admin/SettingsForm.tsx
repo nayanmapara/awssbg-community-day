@@ -1,6 +1,5 @@
 'use client';
 import { useState, useTransition } from 'react';
-import { useRouter } from 'next/navigation';
 import { c } from '@/lib/tokens';
 import { updateSettings } from '@/lib/actions';
 import type { EventSettings } from '@/lib/types';
@@ -39,7 +38,6 @@ export function SettingsForm({ settings }: { settings: EventSettings }) {
   const [open, setOpen] = useState(settings?.registration_open ?? true);
   const [pending, start] = useTransition();
   const [msg, setMsg] = useState<string | null>(null);
-  const router = useRouter();
 
   const save = () => {
     const payload: Record<string, string> = { registration_open: String(open) };
@@ -50,7 +48,6 @@ export function SettingsForm({ settings }: { settings: EventSettings }) {
     start(async () => {
       const res = await updateSettings(payload);
       setMsg(res.ok ? 'Saved — the public site has been revalidated.' : res.error ?? 'Save failed');
-      if (res.ok) router.refresh();
     });
   };
 

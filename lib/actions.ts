@@ -98,23 +98,16 @@ export async function deleteRecord(key: string, id: string) {
   return { ok: true };
 }
 
-/** Swap sort_order with the neighbour above/below. */
+/** Swap sort_order with the neighbour above/below, in a single round trip. */
 export async function reorder(key: string, id: string, direction: -1 | 1) {
   await guard(key);
   const spec = specOf(key);
   const supabase = await createClient();
 
-  const { data: rows } = await supabase
-    .from(spec.table).select('id, sort_order')
-    .neq('status', 'archived').order('sort_order');
-  if (!rows) return { ok: false, error: 'Could not load order' };
-
-  const i = rows.findIndex((r) => r.id === id);
-  const j = i + direction;
-  if (i < 0 || j < 0 || j >= rows.length) return { ok: true };
-
-  await supabase.from(spec.table).update({ sort_order: rows[j].sort_order }).eq('id', rows[i].id);
-  await supabase.from(spec.table).update({ sort_order: rows[i].sort_order }).eq('id', rows[j].id);
+  const { error } = await supabase.rpc('swap_sort_order', {
+    p_table: spec.table, p_id_a: id, p_dir: direction,
+  });
+  if (error) return { ok: false, error: error.message };
 
   revalidate(spec.revalidate);
   revalidatePath('/admin/' + key);

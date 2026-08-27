@@ -1,6 +1,5 @@
 'use client';
 import { useState, useTransition } from 'react';
-import { useRouter } from 'next/navigation';
 import { c } from '@/lib/tokens';
 import { publishAll } from '@/lib/actions';
 
@@ -16,17 +15,17 @@ export function PublishBar({
   const [open, setOpen] = useState(false);
   const [pending, start] = useTransition();
   const [error, setError] = useState<string | null>(null);
-  const router = useRouter();
 
   const count = diff.length;
   const enabled = count > 0 && canPublish;
 
+  // publishAll()'s own revalidatePath calls refresh this route's data as part
+  // of the action response — no separate router.refresh() round trip needed.
   const confirm = () => {
     start(async () => {
       const res = await publishAll();
       if (!res.ok) { setError(res.error ?? 'Publish failed'); return; }
       setOpen(false);
-      router.refresh();
     });
   };
 

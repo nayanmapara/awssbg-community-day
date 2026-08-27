@@ -1,9 +1,11 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 /** Line-art CN Tower. Hidden below 720px, parallaxes slower than the content. */
 export function CnTower() {
-  const [y, setY] = useState(0);
+  // Parallax offset is written straight to the DOM (see effect below) instead
+  // of through state, so scrolling doesn't re-render a 23-path SVG every frame.
+  const wrapRef = useRef<HTMLDivElement>(null);
   const [show, setShow] = useState(true);
 
   useEffect(() => {
@@ -16,7 +18,10 @@ export function CnTower() {
     const onScroll = () => {
       if (queued) return;
       queued = true;
-      requestAnimationFrame(() => { queued = false; setY(window.scrollY); });
+      requestAnimationFrame(() => {
+        queued = false;
+        if (wrapRef.current) wrapRef.current.style.transform = `translateY(${window.scrollY * 0.22}px)`;
+      });
     };
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => { mq.removeEventListener('change', sync); window.removeEventListener('scroll', onScroll); };
@@ -26,11 +31,12 @@ export function CnTower() {
 
   return (
     <div
+      ref={wrapRef}
       aria-hidden
       style={{
         position: 'absolute', top: -40, right: '4%', height: 760,
         zIndex: 0, pointerEvents: 'none', opacity: 0.5,
-        transform: `translateY(${y * 0.22}px)`,
+        transform: 'translateY(0px)',
       }}
     >
       <svg height="100%" viewBox="0 0 200 620" fill="none" stroke="#4da8ff" strokeWidth={1.4} strokeLinecap="square">
