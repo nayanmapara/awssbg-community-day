@@ -5,8 +5,6 @@ the public event pages plus a private admin dashboard we use to run everything
 leading up to and during the day. Next.js on Vercel, Supabase for the database
 and auth.
 
-I (Nayan, Head of Technology) built and maintain this.
-
 Deploying it? Start with [DEPLOY.md](./DEPLOY.md) — the first build doesn't
 need any env vars.
 
