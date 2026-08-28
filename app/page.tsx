@@ -48,6 +48,11 @@ export default async function HomePage() {
   const gallerySlots = gallery.length > 0 ? gallery : null;
   const sponsorTiles = sponsors.length > 0 ? sponsors : null;
 
+  // Wraps the last two words ("Toronto 2026") onto their own line.
+  const headlineWords = (settings.hero_headline ?? settings.name).trim().split(/\s+/);
+  const headlineLine1 = headlineWords.slice(0, -2).join(' ');
+  const headlineLine2 = headlineWords.slice(-2).join(' ');
+
   return (
     <>
       <ConsoleEgg />
@@ -59,14 +64,6 @@ export default async function HomePage() {
         {/* ---------------- HERO ---------------- */}
         <section style={{ position: 'relative', zIndex: 1, maxWidth: maxW, margin: '0 auto', padding: `96px ${pad} 64px` }}>
           <CnTower />
-          <div
-            aria-hidden
-            style={{
-              position: 'absolute', top: 40, right: '26%', width: 90, height: 90,
-              background: 'rgba(77,168,255,0.14)', border: '1px solid rgba(77,168,255,0.35)',
-              animation: 'softFloat 7s ease-in-out infinite', zIndex: 0,
-            }}
-          />
 
           <div
             style={{
@@ -81,7 +78,9 @@ export default async function HomePage() {
           </div>
 
           <h1 style={{ fontSize: 'clamp(42px,7vw,86px)', lineHeight: 1.02, margin: '0 0 24px', fontWeight: 800, letterSpacing: '-0.01em' }}>
-            {settings.hero_headline ?? settings.name}
+            {headlineLine1}
+            <br />
+            {headlineLine2}
           </h1>
 
           <p style={{ maxWidth: 640, fontSize: 'clamp(16px,2vw,19px)', lineHeight: 1.6, color: '#a7b1c6', margin: '0 0 36px' }}>
@@ -109,15 +108,16 @@ export default async function HomePage() {
 
           <div
             style={{
-              display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(180px,1fr))',
-              gap: 1, background: c.line, border: `1px solid ${c.line}`, marginBottom: 56,
+              display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(128px,max-content))',
+              justifyContent: 'space-between', gap: '12px 20px', fontSize: 13, padding: '18px 22px',
+              background: c.panel, border: `1px solid ${c.line}`, marginBottom: 40,
             }}
           >
             {quickInfo.map((q) => (
-              <div key={q.label} style={{ background: c.panel, padding: '20px 24px' }}>
-                <div style={{ fontSize: 11, letterSpacing: '0.08em', color: c.accent, fontWeight: 700, marginBottom: 8 }}>{q.label}</div>
-                <div style={{ fontSize: 15, color: c.text, fontWeight: 600 }}>{q.value}</div>
-              </div>
+              <span key={q.label} style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                <span style={{ fontSize: 10, letterSpacing: '0.08em', color: c.accent, fontWeight: 700 }}>{q.label}</span>
+                <span style={{ color: c.text, fontWeight: 600 }}>{q.value}</span>
+              </span>
             ))}
           </div>
 

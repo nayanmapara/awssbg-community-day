@@ -27,7 +27,15 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      {/*
+        suppressHydrationWarning only stops React from warning about
+        mismatched attributes on this exact node — it doesn't disable
+        hydration checks anywhere else. Needed because browser extensions
+        (Grammarly, etc.) inject attributes like data-gr-ext-installed onto
+        <body> before React hydrates, which is a real mismatch but not a bug
+        in this app.
+      */}
+      <body suppressHydrationWarning>{children}</body>
     </html>
   );
 }

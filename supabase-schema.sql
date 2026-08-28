@@ -621,7 +621,7 @@ insert into event_settings (
   'Mississauga, Ontario',
   'Sheridan College Hazel McCallion Campus Mississauga',
   'https://luma.com/11nchdym',
-  'AWS Community Day 2026',
+  'AWS Community Day Toronto 2026',
   'A full day of AWS learning, hands-on labs, and community for Sheridan College students.'
 ) on conflict (id) do nothing;
 
