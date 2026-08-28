@@ -1,5 +1,6 @@
 node_modules
 .next
+.superpowers
 .env
 .env.local
 .vercel
