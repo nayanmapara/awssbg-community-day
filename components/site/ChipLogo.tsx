@@ -1,19 +1,11 @@
+/** Official AWS Student Builder Group program icon. */
 export function ChipLogo({ size = 30 }: { size?: number }) {
-  const f = '#4da8ff';
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden>
-      <rect x="6" y="6" width="3" height="12" fill={f} />
-      <rect x="15" y="6" width="3" height="12" fill={f} />
-      <rect x="6" y="6" width="12" height="3" fill={f} />
-      <rect x="6" y="15" width="12" height="3" fill={f} />
-      <rect x="9" y="1" width="2" height="4" fill={f} />
-      <rect x="13" y="1" width="2" height="4" fill={f} />
-      <rect x="9" y="19" width="2" height="4" fill={f} />
-      <rect x="13" y="19" width="2" height="4" fill={f} />
-      <rect x="1" y="9" width="4" height="2" fill={f} />
-      <rect x="1" y="13" width="4" height="2" fill={f} />
-      <rect x="19" y="9" width="4" height="2" fill={f} />
-      <rect x="19" y="13" width="4" height="2" fill={f} />
+    <svg width={size} height={size} viewBox="0 0 3000 3000" fill="none" aria-hidden>
+      <path
+        d="M2333.33 3000H2000V2666.67H1666.67V3000H1333.33V2666.67H1000V3000H666.667V2333.33H2333.33V3000ZM666.667 2333.33H0V2000H333.333V1666.67H0V1333.33H333.333V1000H0V666.667H666.667V2333.33ZM3000 1000H2666.67V1333.33H3000V1666.67H2666.67V2000H3000V2333.33H2333.33V666.667H3000V1000ZM1000 333.333H1333.33V0H1666.67V333.333H2000V0H2333.33V666.667H666.667V0H1000V333.333Z"
+        fill="#42B4FF"
+      />
     </svg>
   );
 }
