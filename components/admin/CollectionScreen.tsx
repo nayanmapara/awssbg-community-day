@@ -17,11 +17,15 @@ export async function CollectionScreen({ collection }: { collection: string }) {
   if (!can(profile.role, collection)) notFound();
 
   const supabase = await createClient();
-  const { data } = await supabase
-    .from(spec.table)
-    .select('*')
-    .neq('status', 'archived')
-    .order('sort_order', { ascending: true });
+  // profiles (the "users" collection) has neither a status nor a sort_order
+  // column — content collections are the ones with the draft/publish/archive
+  // and manual-ordering model, users are access control instead.
+  let query = supabase.from(spec.table).select('*');
+  if (spec.table !== 'profiles') query = query.neq('status', 'archived');
+  query = spec.reorderable === false
+    ? query.order(spec.labelField, { ascending: true })
+    : query.order('sort_order', { ascending: true });
+  const { data } = await query;
 
   return (
     <CollectionTable

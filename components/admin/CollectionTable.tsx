@@ -1,15 +1,16 @@
 'use client';
 import { useOptimistic, useState, useTransition } from 'react';
 import { c } from '@/lib/tokens';
-import { archiveRecord, reorder, setStatus } from '@/lib/actions';
+import { archiveRecord, reorder, setStatus, toggleUserActive } from '@/lib/actions';
 import { RecordDrawer } from './RecordDrawer';
 import type { CollectionSpec } from '@/lib/collections';
 
-type Row = Record<string, unknown> & { id: string; status?: string };
+type Row = Record<string, unknown> & { id: string; status?: string; role?: string; active?: boolean };
 
 type RowAction =
   | { type: 'move'; id: string; dir: -1 | 1 }
-  | { type: 'status'; id: string; status: string };
+  | { type: 'status'; id: string; status: string }
+  | { type: 'active'; id: string; active: boolean };
 
 const fmtCell = (spec: CollectionSpec, row: Row, key: string): string => {
   const raw = row[key];
@@ -52,6 +53,9 @@ export function CollectionTable({
         if (i < 0 || j < 0 || j >= next.length) return state;
         [next[i], next[j]] = [next[j], next[i]];
         return next;
+      }
+      if (action.type === 'active') {
+        return state.map((r) => (r.id === action.id ? { ...r, active: action.active } : r));
       }
       return state.map((r) => (r.id === action.id ? { ...r, status: action.status } : r));
     }
@@ -118,6 +122,7 @@ export function CollectionTable({
         ) : (
           optimisticRows.map((row, i) => {
             const published = row.status === 'published';
+            const isUserRow = spec.table === 'profiles';
             const rowBusy = pendingId === row.id;
             return (
               <div
@@ -141,17 +146,40 @@ export function CollectionTable({
                   </div>
                 ))}
 
-                <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', alignItems: 'center', flexWrap: 'wrap' }}>
+                  {/*
+                    Status is a pill with a dot — buttons below are sharp
+                    rectangles. Before this, both used the same outlined-box
+                    style (e.g. "ACTIVE" the label vs "ACTIVATE" the button),
+                    which read as visually interchangeable.
+                  */}
                   {row.status && (
                     <span
                       style={{
-                        fontSize: 9, padding: '3px 7px', letterSpacing: '0.05em', fontWeight: 700,
-                        whiteSpace: 'nowrap',
-                        border: `1px solid ${published ? c.border : c.warnBorder}`,
+                        display: 'inline-flex', alignItems: 'center', gap: 5,
+                        fontSize: 9, padding: '4px 9px 4px 7px', letterSpacing: '0.05em', fontWeight: 700,
+                        whiteSpace: 'nowrap', borderRadius: 999,
+                        background: published ? `${c.accent}1f` : `${c.warn}1f`,
                         color: published ? c.accent : c.warn,
                       }}
                     >
+                      <span style={{ width: 5, height: 5, borderRadius: '50%', background: 'currentColor' }} />
                       {published ? 'LIVE' : 'DRAFT'}
+                    </span>
+                  )}
+
+                  {isUserRow && (
+                    <span
+                      style={{
+                        display: 'inline-flex', alignItems: 'center', gap: 5,
+                        fontSize: 9, padding: '4px 9px 4px 7px', letterSpacing: '0.05em', fontWeight: 700,
+                        whiteSpace: 'nowrap', borderRadius: 999,
+                        background: row.role === 'pending' ? `${c.warn}1f` : row.active ? `${c.accent}1f` : `${c.danger}1f`,
+                        color: row.role === 'pending' ? c.warn : row.active ? c.accent : c.danger,
+                      }}
+                    >
+                      <span style={{ width: 5, height: 5, borderRadius: '50%', background: 'currentColor' }} />
+                      {row.role === 'pending' ? 'PENDING' : row.active ? 'ACTIVE' : 'INACTIVE'}
                     </span>
                   )}
 
@@ -179,9 +207,32 @@ export function CollectionTable({
                             { type: 'status', id: row.id, status: published ? 'draft' : 'published' }
                           )}
                           disabled={rowBusy}
-                          style={{ background: 'none', border: `1px solid ${c.border}`, color: c.accent, padding: '0 8px', height: 24, fontSize: 10, cursor: rowBusy ? 'default' : 'pointer', letterSpacing: '0.04em', opacity: rowBusy ? 0.5 : 1 }}
+                          // Solid when it's the action that moves this record forward
+                          // (going live); outlined when it's reversing that.
+                          style={published
+                            ? { background: 'none', border: `1px solid ${c.border}`, color: c.accent, padding: '0 8px', height: 24, fontSize: 10, cursor: rowBusy ? 'default' : 'pointer', letterSpacing: '0.04em', opacity: rowBusy ? 0.5 : 1 }
+                            : { background: c.accent, border: '1px solid transparent', color: c.bg, padding: '0 8px', height: 24, fontSize: 10, fontWeight: 700, cursor: rowBusy ? 'default' : 'pointer', letterSpacing: '0.04em', opacity: rowBusy ? 0.5 : 1 }}
                         >
                           {published ? 'UNPUBLISH' : 'PUBLISH'}
+                        </button>
+                      )}
+
+                      {isUserRow && isOwner && (
+                        <button
+                          onClick={() => run(
+                            row.id,
+                            () => toggleUserActive(row.id, !row.active),
+                            { type: 'active', id: row.id, active: !row.active }
+                          )}
+                          disabled={rowBusy}
+                          title={row.active ? 'Revoke access' : 'Accept and grant access'}
+                          // Solid for ACTIVATE (moves the account forward, into access);
+                          // outlined-danger for DEACTIVATE (a cautionary, reversing action).
+                          style={row.active
+                            ? { background: 'none', border: '1px solid #4a2530', color: c.danger, padding: '0 8px', height: 24, fontSize: 10, cursor: rowBusy ? 'default' : 'pointer', letterSpacing: '0.04em', opacity: rowBusy ? 0.5 : 1 }
+                            : { background: c.accent, border: '1px solid transparent', color: c.bg, padding: '0 8px', height: 24, fontSize: 10, fontWeight: 700, cursor: rowBusy ? 'default' : 'pointer', letterSpacing: '0.04em', opacity: rowBusy ? 0.5 : 1 }}
+                        >
+                          {row.active ? 'DEACTIVATE' : 'ACTIVATE'}
                         </button>
                       )}
 
