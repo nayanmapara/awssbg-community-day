@@ -1,21 +1,15 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import { c } from '@/lib/tokens';
-import { SbgIcon } from '@/components/site/SbgIcon';
+import { missionCopy } from '@/lib/mission-theme';
+import { MissionRocket } from '@/components/site/MissionRocket';
 
 const pad = (n: number) => String(Math.max(0, n)).padStart(2, '0');
 
-function Kicker({ icon, children }: { icon?: 'Clock' | 'Bolt' | 'Trophy'; children: React.ReactNode }) {
+function MissionKicker({ children, direction = 'up' }: { children: React.ReactNode; direction?: 'up' | 'down' }) {
   return (
-    <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, justifyContent: 'center' }}>
-      {icon && (
-        <SbgIcon
-          name={icon}
-          color={icon === 'Trophy' ? 'Amber' : icon === 'Bolt' ? 'Mint' : 'Blue'}
-          size={18}
-          animate="glow"
-        />
-      )}
+    <div style={{ display: 'inline-flex', alignItems: 'center', gap: 10, justifyContent: 'center' }}>
+      <MissionRocket size={16} direction={direction} />
       <span style={{ fontSize: 12, letterSpacing: '0.08em', color: c.accent, fontWeight: 700 }}>
         {children}
       </span>
@@ -68,8 +62,8 @@ export function Countdown({
   if (now >= start && now <= end) {
     return (
       <div className={className} style={{ textAlign: 'center' }}>
-        <Kicker icon="Bolt">HAPPENING NOW</Kicker>
-        <div style={{ fontSize: 'clamp(24px,4vw,38px)', fontWeight: 800, marginTop: 12 }}>
+        <MissionKicker direction="up">{missionCopy.countdown.live}</MissionKicker>
+        <div className="countdown-live" style={{ fontSize: 'clamp(24px,4vw,38px)', fontWeight: 800, marginTop: 12 }}>
           Community Day is live
         </div>
       </div>
@@ -79,7 +73,7 @@ export function Countdown({
   if (now > end) {
     return (
       <div className={className} style={{ textAlign: 'center' }}>
-        <Kicker icon="Trophy">THAT&apos;S A WRAP</Kicker>
+        <MissionKicker direction="up">{missionCopy.countdown.complete}</MissionKicker>
         <div style={{ fontSize: 'clamp(24px,4vw,38px)', fontWeight: 800, marginTop: 12 }}>
           Thanks for building with us
         </div>
@@ -100,7 +94,7 @@ export function Countdown({
   return (
     <div className={className}>
       <div style={{ marginBottom: 16, textAlign: 'center' }}>
-        <Kicker>COUNTING DOWN TO {label.toUpperCase()}</Kicker>
+        <MissionKicker direction="up">{missionCopy.countdown.pre(label)}</MissionKicker>
       </div>
       <div
         style={{

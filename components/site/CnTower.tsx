@@ -39,6 +39,9 @@ export function CnTower() {
   }, []);
 
   useEffect(() => {
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduced) return;
+
     let queued = false;
     const onScroll = () => {
       if (queued) return;

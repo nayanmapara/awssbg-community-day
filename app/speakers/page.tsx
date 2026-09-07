@@ -8,6 +8,7 @@ import { Footer } from '@/components/site/Footer';
 import { AnnouncementBanner } from '@/components/site/AnnouncementBanner';
 import { Reveal } from '@/components/site/Reveal';
 import { TiltCard } from '@/components/site/TiltCard';
+import { PageHero } from '@/components/site/PageHero';
 
 export const revalidate = 3600;
 export const metadata: Metadata = { title: 'Speakers' };
@@ -23,22 +24,18 @@ export default async function SpeakersPage() {
       <GridBackdrop />
 
       <main style={{ position: 'relative', overflowX: 'hidden' }}>
-        <section style={{ position: 'relative', zIndex: 1, maxWidth: maxW, margin: '0 auto', padding: `88px ${pad} 24px` }}>
-          <span style={{ fontSize: 12, letterSpacing: '0.08em', color: c.accent, fontWeight: 700 }}>SPEAKERS</span>
-          <h1 style={{ fontSize: 'clamp(36px,6vw,64px)', fontWeight: 800, margin: '14px 0 20px' }}>Taking the stage</h1>
-          <p style={{ maxWidth: 640, color: '#a7b1c6', fontSize: 16, lineHeight: 1.6, margin: '0 0 20px' }}>
-            {empty
-              ? 'Speaker lineup is coming together. Check back soon — or follow our socials for the announcement.'
-              : 'The builders and professionals joining us for Community Day.'}
-          </p>
+        <PageHero kicker="SPEAKERS" title="Taking the stage">
+          {empty
+            ? 'Speaker lineup is coming together. Check back soon, or follow our socials for the announcement.'
+            : 'The builders and professionals joining us for Community Day.'}
           {empty && (
-            <span style={{ display: 'inline-flex', background: c.warnBg, border: `1px solid ${c.warnBorder}`, padding: '8px 16px' }}>
+            <span className="hero-fade hero-fade-4" style={{ display: 'inline-flex', background: c.warnBg, border: `1px solid ${c.warnBorder}`, padding: '8px 16px', marginTop: 20 }}>
               <span style={{ fontSize: 12, letterSpacing: '0.06em', color: c.warn, fontWeight: 700 }}>LINEUP TO BE ANNOUNCED</span>
             </span>
           )}
-        </section>
+        </PageHero>
 
-        <section style={{ position: 'relative', zIndex: 1, maxWidth: maxW, margin: '0 auto', padding: `40px ${pad} 64px` }}>
+          <section style={{ position: 'relative', zIndex: 1, maxWidth: maxW, margin: '0 auto', padding: `40px ${pad} 64px` }}>
           <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: 20 }}>
             {(empty ? Array.from({ length: 6 }) : speakers).map((_, i) => {
               const sp = empty ? null : speakers[i];
@@ -53,6 +50,7 @@ export default async function SpeakersPage() {
                     }}
                   >
                     <div
+                      className="speaker-avatar"
                       style={{
                         width: 64, height: 64, borderRadius: '50%', margin: '0 auto 18px',
                         background: c.panel, border: `1px solid ${c.border}`,

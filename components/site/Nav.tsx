@@ -1,17 +1,19 @@
 'use client';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { c, gridBg, maxW, pad } from '@/lib/tokens';
+import { missionCopy } from '@/lib/mission-theme';
 import { ChipLogo } from './ChipLogo';
 import { RegisterButton } from './RegisterButton';
 
 const LINKS = [
-  { href: '/#about', label: 'ABOUT' },
-  { href: '/#agenda', label: 'AGENDA' },
+  { href: '/#about', label: 'ABOUT', section: 'about' },
+  { href: '/#agenda', label: missionCopy.nav.agenda, section: 'agenda' },
   { href: '/speakers', label: 'SPEAKERS' },
   { href: '/team', label: 'TEAM' },
-  { href: '/#faq', label: 'FAQ' },
-  { href: '/#location', label: 'LOCATION' },
+  { href: '/#faq', label: missionCopy.nav.faq, section: 'faq' },
+  { href: '/#location', label: missionCopy.nav.location, section: 'location' },
 ];
 
 export function Nav({
@@ -25,6 +27,44 @@ export function Nav({
   const [egg, setEgg] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  const [activeSection, setActiveSection] = useState<string | null>(null);
+  const pathname = usePathname();
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 48);
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
+  // Highlight home section anchors as user scrolls.
+  useEffect(() => {
+    if (pathname !== '/') {
+      setActiveSection(null);
+      return;
+    }
+
+    const sections = LINKS.filter((l) => 'section' in l && l.section).map((l) => l.section!);
+    const nodes = sections
+      .map((id) => document.getElementById(id))
+      .filter(Boolean) as HTMLElement[];
+
+    if (nodes.length === 0) return;
+
+    const io = new IntersectionObserver(
+      (entries) => {
+        const visible = entries
+          .filter((e) => e.isIntersecting)
+          .sort((a, b) => b.intersectionRatio - a.intersectionRatio);
+        if (visible[0]?.target.id) setActiveSection(visible[0].target.id);
+      },
+      { rootMargin: '-40% 0px -45% 0px', threshold: [0, 0.25, 0.5] },
+    );
+
+    nodes.forEach((n) => io.observe(n));
+    return () => io.disconnect();
+  }, [pathname]);
 
   useEffect(() => {
     const mq = window.matchMedia('(max-width: 720px)');
@@ -84,6 +124,7 @@ export function Nav({
   return (
     <>
       <header
+        className={`nav-header${scrolled ? ' nav-header--scrolled' : ''}`}
         style={{
           position: 'sticky', top: 0, zIndex: 50,
           background: 'rgba(10,15,28,0.88)', backdropFilter: 'blur(10px)',
@@ -91,6 +132,7 @@ export function Nav({
         }}
       >
         <div
+          className="nav-inner"
           style={{
             maxWidth: maxW, margin: '0 auto', display: 'flex', alignItems: 'center',
             justifyContent: 'space-between', padding: `16px ${pad}`, gap: 24,
@@ -128,11 +170,12 @@ export function Nav({
             <nav style={{ display: 'flex', gap: 'clamp(12px,2vw,28px)', alignItems: 'center' }}>
               {LINKS.map((l) => {
                 const on = active && l.href.endsWith(active);
+                const sectionOn = pathname === '/' && 'section' in l && l.section === activeSection;
                 return (
                   <Link
                     key={l.href}
                     href={l.href}
-                    className={`nav-link${on ? ' nav-link--active' : ''}`}
+                    className={`nav-link${on || sectionOn ? ' nav-link--active' : ''}`}
                     style={{
                       fontSize: 13, letterSpacing: '0.05em', fontWeight: on ? 700 : 500,
                     }}
@@ -152,12 +195,14 @@ export function Nav({
           <div
             onClick={() => setDrawerOpen(false)}
             aria-hidden
+            className="nav-drawer-backdrop"
             style={{ position: 'fixed', inset: 0, zIndex: 90, background: 'rgba(4,7,14,0.72)' }}
           />
           <div
             role="dialog"
             aria-modal="true"
             aria-label="Menu"
+            className="nav-drawer-panel"
             style={{
               position: 'fixed', top: 0, right: 0, bottom: 0, zIndex: 95,
               width: 'min(78vw,320px)', overflowY: 'auto',
@@ -179,12 +224,13 @@ export function Nav({
 
             {LINKS.map((l) => {
               const on = active && l.href.endsWith(active);
+              const sectionOn = pathname === '/' && 'section' in l && l.section === activeSection;
               return (
                 <Link
                   key={l.href}
                   href={l.href}
                   onClick={() => setDrawerOpen(false)}
-                  className={`nav-link${on ? ' nav-link--active' : ''}`}
+                  className={`nav-link nav-drawer-link${on || sectionOn ? ' nav-link--active' : ''}`}
                   style={{
                     fontSize: 15, letterSpacing: '0.05em', fontWeight: on ? 700 : 600,
                     borderLeft: `2px solid ${on ? c.accent : 'transparent'}`,

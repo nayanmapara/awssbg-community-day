@@ -7,7 +7,7 @@ import { useEffect, useRef, useState, type CSSProperties } from 'react';
  * can never be stranded invisible.
  */
 export function Reveal({
-  children, from = 'translateY(24px)', delay = 0, style,
+  children, from = 'translateY(28px) scale(0.98)', delay = 0, style,
 }: {
   children: React.ReactNode;
   from?: string;

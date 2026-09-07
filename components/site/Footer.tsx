@@ -73,8 +73,9 @@ export function Footer() {
       </div>
 
       <div
+        className="footer-energy"
         style={{
-          background: c.accent, color: c.bg, textAlign: 'center', padding: 14,
+          color: c.bg, textAlign: 'center', padding: 14,
           fontSize: 12, fontWeight: 700, letterSpacing: '0.08em',
         }}
       >

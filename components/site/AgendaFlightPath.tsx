@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { c } from '@/lib/tokens';
 import { SESSION_KIND_ICONS } from '@/lib/sbg-icons';
 import { SbgIcon } from '@/components/site/SbgIcon';
+import { MissionRocket } from '@/components/site/MissionRocket';
 import type { AgendaItem } from '@/lib/types';
 
 // Constructing an Intl.DateTimeFormat is expensive; build it once at module
@@ -23,6 +24,7 @@ export function AgendaFlightPath({ items }: { items: AgendaItem[] }) {
   const trackRef = useRef<HTMLDivElement>(null);
   const railFillRef = useRef<HTMLDivElement>(null);
   const rocketRef = useRef<HTMLDivElement>(null);
+  const iconRef = useRef<HTMLDivElement>(null);
 
   const [activeIndex, setActiveIndex] = useState(0);
   const [isMobile, setIsMobile] = useState(false);
@@ -64,10 +66,9 @@ export function AgendaFlightPath({ items }: { items: AgendaItem[] }) {
   const applyPosition = (pct: number) => {
     const clamped = Math.max(0, Math.min(1, pct));
     if (railFillRef.current) railFillRef.current.style.height = `${clamped * 100}%`;
-    if (rocketRef.current) {
-      rocketRef.current.style.top = `${clamped * 100}%`;
-      rocketRef.current.style.transform =
-        `translate(-50%,-50%) rotate(${180 + Math.sin(clamped * 22) * 9}deg)`;
+    if (rocketRef.current) rocketRef.current.style.top = `${clamped * 100}%`;
+    if (iconRef.current) {
+      iconRef.current.style.transform = `rotate(${180 + Math.sin(clamped * 22) * 9}deg)`;
     }
   };
 
@@ -127,9 +128,16 @@ export function AgendaFlightPath({ items }: { items: AgendaItem[] }) {
 
   if (n === 0) {
     return (
-      <p style={{ color: c.faint, fontSize: 13 }}>
-        The schedule is being finalised. Check back soon.
-      </p>
+      <div className="agenda-empty">
+        <div className="agenda-empty__dots" aria-hidden>
+          <span className="agenda-empty__dot" />
+          <span className="agenda-empty__dot" />
+          <span className="agenda-empty__dot" />
+        </div>
+        <p style={{ color: c.faint, fontSize: 13, margin: 0 }}>
+          The schedule is being finalised. Check back soon.
+        </p>
+      </div>
     );
   }
 
@@ -137,6 +145,7 @@ export function AgendaFlightPath({ items }: { items: AgendaItem[] }) {
     <>
       {isLive && (
         <div
+          className="agenda-live-badge"
           style={{
             display: 'inline-flex', alignItems: 'center', gap: 10, marginBottom: 20,
             background: c.card, border: `1px solid ${c.accent}`, padding: '8px 16px',
@@ -164,58 +173,47 @@ export function AgendaFlightPath({ items }: { items: AgendaItem[] }) {
         />
         <div
           ref={rocketRef}
+          className="agenda-rocket"
           style={{
             position: 'absolute', left: railLeft, top: 0, zIndex: 3,
-            transform: 'translate(-50%,-50%) rotate(180deg)',
+            transform: 'translate(-50%,-50%)',
             transition: isLive ? 'top .6s ease' : 'top .05s linear',
             filter: 'drop-shadow(0 0 8px rgba(77,168,255,0.7))',
           }}
         >
-          <svg width="30" height="30" viewBox="0 0 24 24" aria-hidden>
-            <polygon points="12,1 16,9 8,9" fill={c.accentHi} />
-            <rect x="8" y="9" width="8" height="9" fill={c.accent} />
-            <polygon points="8,14 3,20 8,18" fill={c.accentDim} />
-            <polygon points="16,14 21,20 16,18" fill={c.accentDim} />
-            <circle cx="12" cy="13" r="1.6" fill={c.bg} />
-            <polygon points="9,18 15,18 12,23" fill={c.warn} />
-          </svg>
+          <MissionRocket ref={iconRef} size={30} direction="down" />
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16, position: 'relative', zIndex: 1 }}>
           {rows.map((item, i) => {
-            const passed = i <= activeIndex;
             const isActive = i === activeIndex;
+            const isPast = i < activeIndex;
             const onLeft = !isMobile && i % 2 === 0;
 
             const card = (
               <div
+                className={`agenda-card${isActive ? ' agenda-card--active' : ''}${isPast ? ' agenda-card--past' : ''}`}
                 style={{
                   background: isActive ? c.cardActive : c.card,
                   border: `1px solid ${isActive ? c.accent : c.border}`,
-                  boxShadow: isActive ? '0 0 0 1px rgba(77,168,255,0.35), 0 8px 26px rgba(0,0,0,0.45)' : 'none',
                   padding: '14px 20px', maxWidth: 280,
                   marginRight: onLeft ? 24 : 0,
                   marginLeft: onLeft ? 0 : (isMobile ? 14 : 24),
                   textAlign: onLeft ? 'right' : 'left',
-                  transition: 'background .3s ease, border-color .3s ease, box-shadow .3s ease',
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: onLeft ? 'flex-end' : 'flex-start' }}>
                   <SbgIcon
                     {...SESSION_KIND_ICONS[item.kind]}
                     size={14}
-                    style={{ opacity: isActive ? 1 : 0.7, flexShrink: 0 }}
+                    animate={isActive ? 'glow' : false}
+                    style={{ opacity: isActive ? 1 : isPast ? 0.45 : 0.75, flexShrink: 0 }}
                   />
                   <span style={{ fontSize: 11, color: isActive ? c.accentHi : c.accent, fontWeight: 700, letterSpacing: '0.05em' }}>
                     {item.timeLabel}
                   </span>
                 </div>
-                <div
-                  style={{
-                    fontSize: 14, fontWeight: 700, color: c.textBright, marginTop: 4,
-                    opacity: passed ? 1 : 0.55, transition: 'opacity .3s ease',
-                  }}
-                >
+                <div style={{ fontSize: 14, fontWeight: 700, color: c.textBright, marginTop: 4 }}>
                   {item.title}
                 </div>
                 {item.attribution && (
@@ -230,15 +228,11 @@ export function AgendaFlightPath({ items }: { items: AgendaItem[] }) {
               <div key={item.id} style={{ display: 'grid', gridTemplateColumns: cols, alignItems: 'center', minHeight: 64 }}>
                 <div style={{ display: 'flex', justifyContent: 'flex-end' }}>{onLeft ? card : null}</div>
                 <div
+                  className={`agenda-node${isActive ? ' agenda-node--active' : ''}${isPast ? ' agenda-node--past' : ''}`}
                   style={{
                     justifySelf: 'center',
                     width: 16, height: 16, borderRadius: '50%',
-                    background: passed ? c.accent : c.borderMid, border: `2px solid ${c.bg}`,
-                    boxShadow: isActive
-                      ? '0 0 14px 4px rgba(77,168,255,0.85)'
-                      : passed ? '0 0 8px 1px rgba(77,168,255,0.45)' : 'none',
-                    // Scale via transform (compositor-only) instead of animating
-                    // width/height, which would force layout on every frame.
+                    background: isPast || isActive ? c.accent : c.borderMid, border: `2px solid ${c.bg}`,
                     transform: isActive ? 'scale(1)' : 'scale(0.75)',
                     transition: 'transform .3s ease, background-color .3s ease, box-shadow .3s ease',
                   }}

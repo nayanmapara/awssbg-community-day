@@ -17,6 +17,7 @@ const STYLES = {
 export function AnnouncementBanner() {
   const [items, setItems] = useState<Announcement[]>([]);
   const [dismissed, setDismissed] = useState<string[]>([]);
+  const [exiting, setExiting] = useState<string[]>([]);
 
   useEffect(() => {
     const supabase = createClient();
@@ -36,6 +37,14 @@ export function AnnouncementBanner() {
     return () => { cancelled = true; supabase.removeChannel(channel); };
   }, []);
 
+  const dismiss = (id: string) => {
+    setExiting((e) => [...e, id]);
+    window.setTimeout(() => {
+      setDismissed((d) => [...d, id]);
+      setExiting((e) => e.filter((x) => x !== id));
+    }, 320);
+  };
+
   const visible = items.filter((a) => !dismissed.includes(a.id));
   if (visible.length === 0) return null;
 
@@ -43,10 +52,12 @@ export function AnnouncementBanner() {
     <div style={{ position: 'relative', zIndex: 40 }}>
       {visible.map((a) => {
         const s = STYLES[a.level] ?? STYLES.info;
+        const isExiting = exiting.includes(a.id);
         return (
           <div
             key={a.id}
             role="status"
+            className={`announce-banner announce-banner--${a.level}${isExiting ? ' announce-banner--exit' : ''}`}
             style={{
               background: s.bg, borderBottom: `1px solid ${s.border}`, color: s.text,
               padding: '12px 44px 12px 20px', fontSize: 13, textAlign: 'center', position: 'relative',
@@ -54,7 +65,7 @@ export function AnnouncementBanner() {
           >
             {a.link_url ? <a href={a.link_url}>{a.body}</a> : a.body}
             <button
-              onClick={() => setDismissed((d) => [...d, a.id])}
+              onClick={() => dismiss(a.id)}
               aria-label="Dismiss announcement"
               style={{
                 position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)',

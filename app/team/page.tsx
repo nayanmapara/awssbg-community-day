@@ -1,5 +1,4 @@
 import Image from 'next/image';
-import Link from 'next/link';
 import type { Metadata } from 'next';
 import { c, maxW, pad } from '@/lib/tokens';
 import { getMemberCount, getSettings, getTeam, mediaUrl } from '@/lib/queries';
@@ -9,6 +8,8 @@ import { Footer } from '@/components/site/Footer';
 import { AnnouncementBanner } from '@/components/site/AnnouncementBanner';
 import { Reveal } from '@/components/site/Reveal';
 import { TiltCard } from '@/components/site/TiltCard';
+import { PageHero } from '@/components/site/PageHero';
+import { GhostButton } from '@/components/site/GhostButton';
 
 export const revalidate = 3600;
 export const metadata: Metadata = { title: 'Team' };
@@ -27,16 +28,10 @@ export default async function TeamPage() {
       <GridBackdrop />
 
       <main style={{ position: 'relative', overflowX: 'hidden' }}>
-        <section style={{ position: 'relative', zIndex: 1, maxWidth: maxW, margin: '0 auto', padding: `88px ${pad} 24px` }}>
-          <span style={{ fontSize: 12, letterSpacing: '0.08em', color: c.accent, fontWeight: 700 }}>TEAM</span>
-          <h1 style={{ fontSize: 'clamp(36px,6vw,64px)', fontWeight: 800, margin: '14px 0 20px' }}>
-            The people behind Community Day
-          </h1>
-          <p style={{ maxWidth: 640, color: '#a7b1c6', fontSize: 16, lineHeight: 1.6, margin: 0 }}>
-            {leads.length} student lead{leads.length === 1 ? '' : 's'} run the AWS Student Builder Group
-            at Sheridan College and are organising this year&apos;s Community Day.
-          </p>
-        </section>
+        <PageHero kicker="TEAM" title="The people behind Community Day">
+          {leads.length} student lead{leads.length === 1 ? '' : 's'} run the AWS Student Builder Group
+          at Sheridan College and are organising this year&apos;s Community Day.
+        </PageHero>
 
         <section style={{ position: 'relative', zIndex: 1, maxWidth: maxW, margin: '0 auto', padding: `40px ${pad} 64px` }}>
           <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: 20 }}>
@@ -91,9 +86,7 @@ export default async function TeamPage() {
                     : 'Backed by a growing community of student members.'}
                 </div>
               </div>
-              <Link href="/members" style={{ border: `1px solid ${c.accent}`, color: c.accent, padding: '14px 28px', fontWeight: 700, letterSpacing: '0.05em', fontSize: 13, whiteSpace: 'nowrap' }}>
-                MEET THE MEMBERS →
-              </Link>
+              <GhostButton href="/members" variant="accent" size="sm">MEET THE MEMBERS</GhostButton>
             </div>
           </Reveal>
         </section>
