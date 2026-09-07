@@ -69,8 +69,8 @@ export default async function TeamPage() {
                     <div style={{ fontSize: 11, color: c.mutedDim, letterSpacing: '0.06em', marginBottom: 14 }}>{m.title_label}</div>
                     <div style={{ fontSize: 13, color: c.muted, lineHeight: 1.6 }}>{m.bio}</div>
                     {m.linkedin_url && (
-                      <a href={m.linkedin_url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 11, letterSpacing: '0.05em', fontWeight: 700, display: 'inline-block', marginTop: 14 }}>
-                        LINKEDIN →
+                      <a href={m.linkedin_url} target="_blank" rel="noopener noreferrer" className="link-arrow" style={{ fontSize: 11, letterSpacing: '0.05em', fontWeight: 700, display: 'inline-flex', marginTop: 14 }}>
+                        LINKEDIN <span className="link-arrow__icon">→</span>
                       </a>
                     )}
                   </TiltCard>

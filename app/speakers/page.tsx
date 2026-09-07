@@ -78,8 +78,8 @@ export default async function SpeakersPage() {
                         {sp.topic && <div style={{ fontSize: 13, color: c.text, marginTop: 12, fontWeight: 600 }}>{sp.topic}</div>}
                         {sp.bio && <p style={{ fontSize: 13, color: c.muted, lineHeight: 1.6, marginTop: 10 }}>{sp.bio}</p>}
                         {sp.linkedin_url && (
-                          <a href={sp.linkedin_url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 11, letterSpacing: '0.05em', fontWeight: 700, display: 'inline-block', marginTop: 12 }}>
-                            LINKEDIN →
+                          <a href={sp.linkedin_url} target="_blank" rel="noopener noreferrer" className="link-arrow" style={{ fontSize: 11, letterSpacing: '0.05em', fontWeight: 700, display: 'inline-flex', marginTop: 12 }}>
+                            LINKEDIN <span className="link-arrow__icon">→</span>
                           </a>
                         )}
                       </>

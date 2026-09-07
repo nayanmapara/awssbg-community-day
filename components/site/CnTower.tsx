@@ -61,13 +61,13 @@ export function CnTower() {
       ref={wrapRef}
       aria-hidden
       style={isMobile ? {
-        position: 'absolute', top: 0, left: '50%', zIndex: -1, pointerEvents: 'none', opacity: 0.28,
+        position: 'absolute', top: -16, left: '50%', zIndex: -1, pointerEvents: 'none', opacity: 0.28,
         height: 'clamp(320px, 85vw, 460px)', transform: 'translateX(-50%) translateY(0px)',
         overflow: 'visible',
         maskImage: 'linear-gradient(to bottom, black 0%, black 60%, transparent 100%)',
         WebkitMaskImage: 'linear-gradient(to bottom, black 0%, black 60%, transparent 100%)',
       } : {
-        position: 'absolute', top: 4, right: '4%', zIndex: -1, pointerEvents: 'none', opacity: 0.5,
+        position: 'absolute', top: -20, right: '4%', zIndex: -1, pointerEvents: 'none', opacity: 0.5,
         height: 'clamp(240px, 58vw, 760px)', transform: 'translateY(0px)',
         overflow: 'visible',
         maskImage: 'linear-gradient(to bottom, black 0%, black 78%, transparent 100%)',

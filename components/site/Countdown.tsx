@@ -1,10 +1,57 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { c } from '@/lib/tokens';
+import { SbgIcon } from '@/components/site/SbgIcon';
 
 const pad = (n: number) => String(Math.max(0, n)).padStart(2, '0');
 
-export function Countdown({ startsAt, endsAt }: { startsAt: string; endsAt: string }) {
+function Kicker({ icon, children }: { icon?: 'Clock' | 'Bolt' | 'Trophy'; children: React.ReactNode }) {
+  return (
+    <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, justifyContent: 'center' }}>
+      {icon && (
+        <SbgIcon
+          name={icon}
+          color={icon === 'Trophy' ? 'Amber' : icon === 'Bolt' ? 'Mint' : 'Blue'}
+          size={18}
+          animate="glow"
+        />
+      )}
+      <span style={{ fontSize: 12, letterSpacing: '0.08em', color: c.accent, fontWeight: 700 }}>
+        {children}
+      </span>
+    </div>
+  );
+}
+
+function CountdownDigit({ value, label }: { value: string; label: string }) {
+  const [tick, setTick] = useState(false);
+  const prev = useRef(value);
+
+  useEffect(() => {
+    if (prev.current === value) return;
+    prev.current = value;
+    setTick(true);
+    const t = setTimeout(() => setTick(false), 450);
+    return () => clearTimeout(t);
+  }, [value]);
+
+  return (
+    <div className={`countdown-digit hover-panel${tick ? ' countdown-digit--tick' : ''}`} style={{ background: c.card, border: `1px solid ${c.border}`, padding: '24px 12px', textAlign: 'center' }}>
+      <div className="countdown-digit__value" style={{ fontSize: 'clamp(28px,4vw,44px)', fontWeight: 800, color: c.textBright }}>{value}</div>
+      <div style={{ fontSize: 11, color: c.muted, letterSpacing: '0.08em', marginTop: 8 }}>{label}</div>
+    </div>
+  );
+}
+
+export function Countdown({
+  startsAt,
+  endsAt,
+  className,
+}: {
+  startsAt: string;
+  endsAt: string;
+  className?: string;
+}) {
   const [now, setNow] = useState<number | null>(null);
 
   useEffect(() => {
@@ -16,15 +63,12 @@ export function Countdown({ startsAt, endsAt }: { startsAt: string; endsAt: stri
   const start = new Date(startsAt).getTime();
   const end = new Date(endsAt).getTime();
 
-  // Render nothing time-dependent on the server to avoid hydration drift.
-  if (now === null) return <div style={{ minHeight: 132 }} />;
+  if (now === null) return <div className={className} style={{ minHeight: 132 }} />;
 
   if (now >= start && now <= end) {
     return (
-      <div style={{ textAlign: 'center' }}>
-        <span style={{ fontSize: 12, letterSpacing: '0.08em', color: c.accent, fontWeight: 700 }}>
-          HAPPENING NOW
-        </span>
+      <div className={className} style={{ textAlign: 'center' }}>
+        <Kicker icon="Bolt">HAPPENING NOW</Kicker>
         <div style={{ fontSize: 'clamp(24px,4vw,38px)', fontWeight: 800, marginTop: 12 }}>
           Community Day is live
         </div>
@@ -34,10 +78,8 @@ export function Countdown({ startsAt, endsAt }: { startsAt: string; endsAt: stri
 
   if (now > end) {
     return (
-      <div style={{ textAlign: 'center' }}>
-        <span style={{ fontSize: 12, letterSpacing: '0.08em', color: c.accent, fontWeight: 700 }}>
-          THAT&apos;S A WRAP
-        </span>
+      <div className={className} style={{ textAlign: 'center' }}>
+        <Kicker icon="Trophy">THAT&apos;S A WRAP</Kicker>
         <div style={{ fontSize: 'clamp(24px,4vw,38px)', fontWeight: 800, marginTop: 12 }}>
           Thanks for building with us
         </div>
@@ -56,11 +98,9 @@ export function Countdown({ startsAt, endsAt }: { startsAt: string; endsAt: stri
   const label = new Date(startsAt).toLocaleDateString('en-CA', { month: 'long', day: 'numeric' });
 
   return (
-    <div>
+    <div className={className}>
       <div style={{ marginBottom: 16, textAlign: 'center' }}>
-        <span style={{ fontSize: 12, letterSpacing: '0.08em', color: c.accent, fontWeight: 700 }}>
-          COUNTING DOWN TO {label.toUpperCase()}
-        </span>
+        <Kicker>COUNTING DOWN TO {label.toUpperCase()}</Kicker>
       </div>
       <div
         style={{
@@ -69,10 +109,7 @@ export function Countdown({ startsAt, endsAt }: { startsAt: string; endsAt: stri
         }}
       >
         {parts.map((p) => (
-          <div key={p.l} style={{ background: c.card, border: `1px solid ${c.border}`, padding: '20px 12px', textAlign: 'center' }}>
-            <div style={{ fontSize: 'clamp(28px,4vw,44px)', fontWeight: 800, color: c.textBright }}>{p.v}</div>
-            <div style={{ fontSize: 11, color: c.muted, letterSpacing: '0.08em', marginTop: 6 }}>{p.l}</div>
-          </div>
+          <CountdownDigit key={p.l} value={p.v} label={p.l} />
         ))}
       </div>
     </div>

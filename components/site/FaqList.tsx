@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { c } from '@/lib/tokens';
+import { SbgIcon } from '@/components/site/SbgIcon';
 import type { Faq } from '@/lib/types';
 
 /** Answers type out like a terminal readout when opened. */
@@ -27,7 +28,7 @@ export function FaqList({ items }: { items: Faq[] }) {
         const isOpen = open === f.id;
         const shown = isOpen ? f.answer.slice(0, typed) : '';
         return (
-          <div key={f.id} style={{ background: c.panel }}>
+          <div key={f.id} className={`faq-item${isOpen ? ' faq-item--open' : ''}`} style={{ background: c.panel }}>
             <button
               onClick={() => setOpen(isOpen ? null : f.id)}
               aria-expanded={isOpen}
@@ -37,7 +38,10 @@ export function FaqList({ items }: { items: Faq[] }) {
                 background: 'none', border: 'none', color: 'inherit', textAlign: 'left',
               }}
             >
-              <span style={{ fontSize: 15, fontWeight: 600, color: c.textBright }}>{f.question}</span>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 12, flex: 1, minWidth: 0 }}>
+                <SbgIcon name="Key" color={isOpen ? 'Amber' : 'Blue'} size={18} animate={isOpen ? 'glow' : false} style={{ flexShrink: 0 }} />
+                <span style={{ fontSize: 15, fontWeight: 600, color: c.textBright }}>{f.question}</span>
+              </span>
               <span
                 style={{
                   color: c.accent, fontSize: 18, fontWeight: 700,
@@ -47,14 +51,18 @@ export function FaqList({ items }: { items: Faq[] }) {
                 +
               </span>
             </button>
-            {isOpen && (
-              <p style={{ margin: '0 24px 20px', color: c.muted, fontSize: 14, lineHeight: 1.6 }}>
-                {shown}
-                {typed < f.answer.length && (
-                  <span style={{ color: c.accent, animation: 'blink .8s step-end infinite' }}>█</span>
+            <div className={`faq-answer-wrap${isOpen ? ' faq-answer-wrap--open' : ''}`}>
+              <div className="faq-answer-inner">
+                {isOpen && (
+                  <p className="faq-answer-text">
+                    {shown}
+                    {typed < f.answer.length && (
+                      <span style={{ color: c.accent, animation: 'blink .8s step-end infinite' }}>█</span>
+                    )}
+                  </p>
                 )}
-              </p>
-            )}
+              </div>
+            </div>
           </div>
         );
       })}

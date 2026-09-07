@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import { c, gridBg, maxW, pad } from '@/lib/tokens';
 import { ChipLogo } from './ChipLogo';
+import { RegisterButton } from './RegisterButton';
 
 const LINKS = [
   { href: '/#about', label: 'ABOUT' },
@@ -66,17 +67,9 @@ export function Nav({
   };
 
   const registerAction = registrationOpen && registrationUrl ? (
-    <a
-      href={registrationUrl}
-      target="_blank"
-      rel="noopener noreferrer"
-      style={{
-        background: c.accent, color: c.bg, padding: '10px 20px',
-        fontSize: 13, fontWeight: 700, letterSpacing: '0.05em',
-      }}
-    >
+    <RegisterButton href={registrationUrl} size="sm">
       REGISTER FREE
-    </a>
+    </RegisterButton>
   ) : (
     <span
       style={{
@@ -139,8 +132,8 @@ export function Nav({
                   <Link
                     key={l.href}
                     href={l.href}
+                    className={`nav-link${on ? ' nav-link--active' : ''}`}
                     style={{
-                      color: on ? c.accent : '#b8c2d6',
                       fontSize: 13, letterSpacing: '0.05em', fontWeight: on ? 700 : 500,
                     }}
                   >
@@ -191,8 +184,8 @@ export function Nav({
                   key={l.href}
                   href={l.href}
                   onClick={() => setDrawerOpen(false)}
+                  className={`nav-link${on ? ' nav-link--active' : ''}`}
                   style={{
-                    color: on ? c.accent : c.text,
                     fontSize: 15, letterSpacing: '0.05em', fontWeight: on ? 700 : 600,
                     borderLeft: `2px solid ${on ? c.accent : 'transparent'}`,
                     paddingLeft: 10, marginLeft: -12,
@@ -205,19 +198,14 @@ export function Nav({
 
             <div style={{ marginTop: 8, display: 'flex' }}>
               {registrationOpen && registrationUrl ? (
-                <a
+                <RegisterButton
                   href={registrationUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                  size="sm"
+                  fullWidth
                   onClick={() => setDrawerOpen(false)}
-                  style={{
-                    background: c.accent, color: c.bg, padding: '12px 20px',
-                    fontSize: 13, fontWeight: 700, letterSpacing: '0.05em',
-                    textAlign: 'center', width: '100%',
-                  }}
                 >
                   REGISTER FREE
-                </a>
+                </RegisterButton>
               ) : (
                 <span
                   style={{

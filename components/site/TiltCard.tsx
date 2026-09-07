@@ -30,7 +30,7 @@ export function TiltCard({
   };
 
   return (
-    <div ref={ref} onMouseMove={onMove} onMouseLeave={onLeave} style={{ willChange: 'transform', ...style }}>
+    <div ref={ref} className="tilt-card" onMouseMove={onMove} onMouseLeave={onLeave} style={{ willChange: 'transform', ...style }}>
       {children}
     </div>
   );

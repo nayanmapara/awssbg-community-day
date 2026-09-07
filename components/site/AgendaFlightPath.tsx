@@ -1,6 +1,8 @@
 'use client';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { c } from '@/lib/tokens';
+import { SESSION_KIND_ICONS } from '@/lib/sbg-icons';
+import { SbgIcon } from '@/components/site/SbgIcon';
 import type { AgendaItem } from '@/lib/types';
 
 // Constructing an Intl.DateTimeFormat is expensive; build it once at module
@@ -198,8 +200,15 @@ export function AgendaFlightPath({ items }: { items: AgendaItem[] }) {
                   transition: 'background .3s ease, border-color .3s ease, box-shadow .3s ease',
                 }}
               >
-                <div style={{ fontSize: 11, color: isActive ? c.accentHi : c.accent, fontWeight: 700, letterSpacing: '0.05em' }}>
-                  {item.timeLabel}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: onLeft ? 'flex-end' : 'flex-start' }}>
+                  <SbgIcon
+                    {...SESSION_KIND_ICONS[item.kind]}
+                    size={14}
+                    style={{ opacity: isActive ? 1 : 0.7, flexShrink: 0 }}
+                  />
+                  <span style={{ fontSize: 11, color: isActive ? c.accentHi : c.accent, fontWeight: 700, letterSpacing: '0.05em' }}>
+                    {item.timeLabel}
+                  </span>
                 </div>
                 <div
                   style={{
