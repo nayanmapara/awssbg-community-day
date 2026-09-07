@@ -2,26 +2,26 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import { c } from '@/lib/tokens';
 
+/** Extra headroom above the spire tip for the sun glow + blur (viewBox units). */
+const VIEW_TOP_PAD = 28;
+
 /**
- * CN Tower silhouette — the original design's exact outline (mast, antenna
- * pod, legs, band, SkyPod deck, tapered shaft, tripod base), traced as one
- * continuous filled shape instead of ~20 separate hairline strokes. The
- * hairline version was the original problem: thin 1.4px lines vanish at
- * small sizes or against a glow, which is what read as "incomplete." A
- * filled shape keeps the same recognizable proportions without that
- * fragility. Carries a gradient fill, a soft halo, and a small independent
- * amber "sun".
+ * Path traced from public/cn-tower-icon.svg — the canonical CN Tower silhouette.
+ * Keep in sync if the source SVG is updated.
+ */
+const CN_TOWER_PATH =
+  'M14.52 139.41h6.86V367.9H0c8.66-75.12 12.8-151.63 14.52-228.49zm-3.88-30.85v3.99l-5.69 5.21v.01h36.06v-.01l-5.69-5.21v-3.99h-8.21l-.18-5.35h.75c.25 0 .46-.2.46-.46v-4.54c0-.25-.21-.46-.46-.46h-.93l-.94-28.77h.6c1.5 0 2.73-1.23 2.73-2.74 0-1.5-1.23-2.73-2.73-2.73h-.54l-.11-27.34h-.68V21.94h-.68L24.07 0h-2.59l-.33 21.94h-.69v14.23h-.67l-.11 27.34h-.54a2.74 2.74 0 0 0-2.73 2.73c0 1.5 1.22 2.73 2.72 2.74l-.51 28.77h-.75c-.26 0-.46.21-.46.46v4.54c0 .26.21.46.46.46h.66l-.1 5.35h-7.79zm13.57 19.8v2.76h1.43l.5-2.76h-1.93zm-1.59 2.76v-2.76h-2.34l.5 2.76h1.84zm5.15-2.76-.5 2.76h2.67l.5-2.76h-2.67zm4.29 0-.5 2.76h2.67l.5-2.76h-2.67zm-12.91 2.76-.5-2.76h-2.67l.5 2.76h2.67zm-4.29 0-.5-2.76h-2.68l.51 2.76h2.67zm-9.91-10.59v2.32h36.06v-2.32H4.95zm0 3.12v3.11h36.06v-3.11H4.95zm1.33 4.71 2.3 2.76h1.98l-.5-2.76H6.28zm-.54 4.34c-1.15 2.07-.25 5.42 2.84 5.32h28.8c3.09.1 3.98-3.24 2.85-5.31H5.86c-.04 0-.08 0-.12-.01zm31.64-1.58 2.3-2.76h-3.32l-.5 2.76h1.52zm-12.8 8.29h6.34c2.03 76.89 6.66 153.34 15.04 228.49H24.58V139.41z';
+
+/**
+ * CN Tower hero graphic — silhouette from `/cn-tower-icon.svg`, tinted with an
+ * accent gradient, a soft halo behind the SkyPod, and a small amber "sun".
  *
- * Desktop keeps the corner placement. Below 720px it switches to a much
- * bigger, centred, low-opacity backdrop spanning the whole hero instead of a
- * small corner accent — a corner accent that size doesn't have room to read
- * as a tower on a narrow screen, but a big soft backdrop does.
+ * Desktop keeps the corner placement. Below 720px it switches to a much bigger,
+ * centred, low-opacity backdrop spanning the whole hero.
  */
 export function CnTower() {
   const wrapRef = useRef<HTMLDivElement>(null);
   const [isMobile, setIsMobile] = useState(false);
-  // Read by the scroll handler below without needing to re-subscribe it
-  // every time isMobile changes.
   const isMobileRef = useRef(false);
 
   const uid = useId();
@@ -38,8 +38,6 @@ export function CnTower() {
     return () => mq.removeEventListener('change', sync);
   }, []);
 
-  // Parallax offset is written straight to the DOM instead of through state,
-  // so scrolling doesn't force a re-render on every frame.
   useEffect(() => {
     let queued = false;
     const onScroll = () => {
@@ -65,17 +63,24 @@ export function CnTower() {
       style={isMobile ? {
         position: 'absolute', top: 0, left: '50%', zIndex: -1, pointerEvents: 'none', opacity: 0.28,
         height: 'clamp(320px, 85vw, 460px)', transform: 'translateX(-50%) translateY(0px)',
+        overflow: 'visible',
         maskImage: 'linear-gradient(to bottom, black 0%, black 60%, transparent 100%)',
         WebkitMaskImage: 'linear-gradient(to bottom, black 0%, black 60%, transparent 100%)',
       } : {
-        position: 'absolute', top: -20, right: '4%', zIndex: -1, pointerEvents: 'none', opacity: 0.5,
+        position: 'absolute', top: 4, right: '4%', zIndex: -1, pointerEvents: 'none', opacity: 0.5,
         height: 'clamp(240px, 58vw, 760px)', transform: 'translateY(0px)',
-        // Fades into whatever comes after the hero instead of hard-cutting.
+        overflow: 'visible',
         maskImage: 'linear-gradient(to bottom, black 0%, black 78%, transparent 100%)',
         WebkitMaskImage: 'linear-gradient(to bottom, black 0%, black 78%, transparent 100%)',
       }}
     >
-      <svg height="100%" viewBox="0 0 200 620" fill="none">
+      <svg
+        height="100%"
+        viewBox={`-6 -${VIEW_TOP_PAD} 57.96 ${367.9 + VIEW_TOP_PAD + 6}`}
+        fill="none"
+        preserveAspectRatio="xMidYMid meet"
+        style={{ display: 'block', overflow: 'visible' }}
+      >
         <defs>
           <linearGradient id={fillId} x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stopColor={c.accentHi} stopOpacity={0.85} />
@@ -95,41 +100,21 @@ export function CnTower() {
           </filter>
         </defs>
 
-        {/* Halo centred on the lower, bolder deck shapes — not the thin hairline legs higher up, which it would otherwise wash out. */}
-        <circle cx="100" cy="200" r="90" fill={`url(#${haloGradId})`} filter={`url(#${blurId})`} stroke="none" />
+        {/* Halo centred on the SkyPod deck (~y 125 in the icon viewBox). */}
+        <circle cx="23" cy="125" r="38" fill={`url(#${haloGradId})`} filter={`url(#${blurId})`} />
 
-        {/* Small independent sun, positioned to clear the sticky header even at the smallest mobile scale. */}
+        {/* Small independent sun near the spire tip. */}
         <g style={{ animation: 'softFloat 7s ease-in-out infinite' }}>
-          <circle cx="136" cy="90" r="17" fill={`url(#${sunGradId})`} filter={`url(#${blurId})`} stroke="none" />
-          <circle cx="136" cy="90" r="6" fill={`url(#${sunGradId})`} stroke="none" />
+          <circle cx="34" cy="18" r="8" fill={`url(#${sunGradId})`} filter={`url(#${blurId})`} />
+          <circle cx="34" cy="18" r="3" fill={`url(#${sunGradId})`} />
         </g>
 
-        {/*
-          One closed outline tracing the original design's exact silhouette:
-          mast -> small antenna pod -> legs -> band -> SkyPod deck (the wide
-          part) -> taper -> shaft -> tripod base. Filled instead of stroked,
-          so it can't lose fine detail the way the hairline version did.
-        */}
         <path
-          d="M97 6 L97 94
-             L87 100 L87 124
-             L92 124 L92 172
-             L78 172 L78 186
-             L66 186 L66 212
-             L82 242 L82 500
-             L40 610
-             L160 610
-             L118 500 L118 242
-             L134 212 L134 186
-             L122 186 L122 172
-             L108 172 L108 124
-             L113 124 L113 100
-             L103 94 L103 6 Z"
+          d={CN_TOWER_PATH}
           fill={`url(#${fillId})`}
+          fillRule="evenodd"
+          clipRule="evenodd"
         />
-        {/* Deck accent lines sit on top of the solid fill, so unlike a lone hairline they can't disappear on their own. */}
-        <path d="M70 199 L130 199" stroke={c.accentHi} strokeOpacity={0.4} strokeWidth={1.5} />
-        <path d="M86 300 L114 300" stroke={c.accentHi} strokeOpacity={0.3} strokeWidth={1} />
       </svg>
     </div>
   );

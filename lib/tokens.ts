@@ -26,7 +26,8 @@ export const c = {
   danger: '#d98a8a',
 } as const;
 
-export const font = "'JetBrains Mono', ui-monospace, monospace";
+export const font = "'Amazon Ember Display', 'Amazon Ember'";
+export const fontMono = "'Amazon Ember Mono', 'Amazon Ember Display', 'Amazon Ember'";
 
 export const gridBg =
   'linear-gradient(rgba(77,168,255,0.07) 1px,transparent 1px),' +

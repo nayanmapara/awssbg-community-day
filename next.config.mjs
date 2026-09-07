@@ -10,9 +10,9 @@ const supabaseHost = new URL(supabaseUrl).hostname;
  */
 const csp = [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
-  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-  "font-src 'self' https://fonts.gstatic.com data:",
+  "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://embed.lu.ma",
+  "style-src 'self' 'unsafe-inline'",
+  "font-src 'self' data:",
   `img-src 'self' data: blob: https://${supabaseHost} https://*.googleusercontent.com`,
   "media-src 'self' blob:",
   `connect-src 'self' https://${supabaseHost} wss://${supabaseHost} https://api.lu.ma`,

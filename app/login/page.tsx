@@ -34,7 +34,7 @@ export default async function LoginPage() {
       style={{
         minHeight: '100vh', display: 'flex', alignItems: 'center',
         justifyContent: 'center', padding: 24, background: c.bg,
-        color: c.text, fontFamily: "'JetBrains Mono', ui-monospace, monospace",
+        color: c.text,
       }}
     >
       <div style={{ width: 'min(400px,100%)', background: c.bgAlt, border: `1px solid ${c.border}`, padding: 36 }}>

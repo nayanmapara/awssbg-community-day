@@ -1,4 +1,46 @@
-@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&display=swap');
+/* Amazon Ember — loaded from public/Logos-Fonts/Fonts only. */
+@font-face {
+  font-family: 'Amazon Ember Display';
+  src: url('/Logos-Fonts/Fonts/AmazonEmberDisplay_Rg.ttf') format('truetype');
+  font-weight: 400 600;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Amazon Ember Display';
+  src: url('/Logos-Fonts/Fonts/AmazonEmberDisplay_Bd.ttf') format('truetype');
+  font-weight: 700 800;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Amazon Ember Display';
+  src: url('/Logos-Fonts/Fonts/AmazonEmberDisplay_RgIt.ttf') format('truetype');
+  font-weight: 400 600;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Amazon Ember Display';
+  src: url('/Logos-Fonts/Fonts/AmazonEmberDisplay_BdIt.ttf') format('truetype');
+  font-weight: 700 800;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Amazon Ember';
+  src: url('/Logos-Fonts/Fonts/AmazonEmber_Bd.ttf') format('truetype');
+  font-weight: 700 800;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Amazon Ember Mono';
+  src: url('/Logos-Fonts/Fonts/AmazonEmberMono_Bd.ttf') format('truetype');
+  font-weight: 700 800;
+  font-style: normal;
+  font-display: swap;
+}
 
 *, *::before, *::after { box-sizing: border-box; }
 
@@ -7,7 +49,7 @@ html, body {
   padding: 0;
   background: #0a0f1c;
   color: #e7ebf3;
-  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-family: 'Amazon Ember Display', 'Amazon Ember';
   -webkit-font-smoothing: antialiased;
   text-wrap: pretty;
 }
@@ -17,6 +59,9 @@ a:hover { color: #7cc3ff; }
 ::selection { background: #4da8ff; color: #0a0f1c; }
 
 input, textarea, select, button { font-family: inherit; }
+code, pre, kbd, samp {
+  font-family: 'Amazon Ember Mono', 'Amazon Ember Display', 'Amazon Ember';
+}
 input:focus-visible, textarea:focus-visible, select:focus-visible, button:focus-visible {
   outline: 2px solid #4da8ff;
   outline-offset: 1px;

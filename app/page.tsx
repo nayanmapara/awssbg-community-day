@@ -62,7 +62,7 @@ export default async function HomePage() {
 
       <main style={{ position: 'relative', overflowX: 'hidden' }}>
         {/* ---------------- HERO ---------------- */}
-        <section style={{ position: 'relative', zIndex: 1, maxWidth: maxW, margin: '0 auto', padding: `96px ${pad} 64px` }}>
+        <section style={{ position: 'relative', zIndex: 1, maxWidth: maxW, margin: '0 auto', padding: `96px ${pad} 64px`, overflow: 'visible' }}>
           <CnTower />
 
           <div
