@@ -5,11 +5,7 @@ import { SESSION_KIND_ICONS } from '@/lib/sbg-icons';
 import { SbgIcon } from '@/components/site/SbgIcon';
 import { MissionRocket } from '@/components/site/MissionRocket';
 import type { AgendaItem } from '@/lib/types';
-
-// Constructing an Intl.DateTimeFormat is expensive; build it once at module
-// scope and reuse it, instead of doing it inline in the render path where a
-// scroll-driven re-render would rebuild it dozens of times a second.
-const TIME_FMT = new Intl.DateTimeFormat('en-CA', { hour: 'numeric', minute: '2-digit' });
+import { eventTimeFormatter } from '@/lib/event-time';
 
 type Row = AgendaItem & { startMs: number; endMs: number; timeLabel: string };
 
@@ -37,7 +33,7 @@ export function AgendaFlightPath({ items }: { items: AgendaItem[] }) {
       ...item,
       startMs: new Date(item.starts_at).getTime(),
       endMs: new Date(item.ends_at).getTime(),
-      timeLabel: `${TIME_FMT.format(new Date(item.starts_at))} – ${TIME_FMT.format(new Date(item.ends_at))}`,
+      timeLabel: `${eventTimeFormatter.format(new Date(item.starts_at))} – ${eventTimeFormatter.format(new Date(item.ends_at))}`,
     })),
     [items]
   );

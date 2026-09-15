@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import { c } from '@/lib/tokens';
+import { formatEventShortDate } from '@/lib/event-time';
 import { missionCopy } from '@/lib/mission-theme';
 import { MissionRocket } from '@/components/site/MissionRocket';
 
@@ -89,7 +90,7 @@ export function Countdown({
     { v: pad(Math.floor((diff % 60000) / 1000)), l: 'SECS' },
   ];
 
-  const label = new Date(startsAt).toLocaleDateString('en-CA', { month: 'long', day: 'numeric' });
+  const label = formatEventShortDate(startsAt);
 
   return (
     <div className={className}>

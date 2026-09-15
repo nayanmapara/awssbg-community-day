@@ -4,6 +4,7 @@ import { c } from '@/lib/tokens';
 import { archiveRecord, reorder, setStatus, toggleUserActive } from '@/lib/actions';
 import { RecordDrawer } from './RecordDrawer';
 import type { CollectionSpec } from '@/lib/collections';
+import { formatEventDateTime } from '@/lib/event-time';
 
 type Row = Record<string, unknown> & { id: string; status?: string; role?: string; active?: boolean };
 
@@ -16,9 +17,7 @@ const fmtCell = (spec: CollectionSpec, row: Row, key: string): string => {
   const raw = row[key];
   if (raw == null || raw === '') return '—';
   if (key.endsWith('_at')) {
-    return new Date(String(raw)).toLocaleString('en-CA', {
-      month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit',
-    });
+    return formatEventDateTime(String(raw));
   }
   const s = String(raw);
   // Enum-ish columns render uppercase to match the design.

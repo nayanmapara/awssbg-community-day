@@ -24,6 +24,7 @@ import { BlueprintFrame } from '@/components/site/BlueprintFrame';
 import { SectionHeading } from '@/components/site/SectionHeading';
 import { ScrollProgressRail } from '@/components/site/ScrollProgressRail';
 import { missionCopy } from '@/lib/mission-theme';
+import { formatEventDate, formatEventTimeRange } from '@/lib/event-time';
 import { HIGHLIGHT_ICON_PALETTE, QUICK_INFO_ICONS, statIcon } from '@/lib/sbg-icons';
 
 /** Statically rendered; refreshed by revalidatePath('/') when an editor publishes. */
@@ -40,13 +41,8 @@ export default async function HomePage() {
     return <main style={{ padding: 80, textAlign: 'center' }}>Event settings have not been created yet.</main>;
   }
 
-  const dateLabel = new Date(settings.starts_at).toLocaleDateString('en-CA', {
-    weekday: 'short', month: 'short', day: 'numeric', year: 'numeric',
-  });
-  const timeLabel =
-    new Date(settings.starts_at).toLocaleTimeString('en-CA', { hour: 'numeric', minute: '2-digit' }) +
-    ' – ' +
-    new Date(settings.ends_at).toLocaleTimeString('en-CA', { hour: 'numeric', minute: '2-digit' });
+  const dateLabel = formatEventDate(settings.starts_at);
+  const timeLabel = formatEventTimeRange(settings.starts_at, settings.ends_at);
 
   const quickInfo = [
     { label: 'DATE', value: dateLabel.toUpperCase() },

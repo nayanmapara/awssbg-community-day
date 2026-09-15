@@ -3,11 +3,12 @@ import { useState, useTransition } from 'react';
 import { c } from '@/lib/tokens';
 import { updateSettings } from '@/lib/actions';
 import type { EventSettings } from '@/lib/types';
+import { EVENT_TIME_ZONE, fromDatetimeLocalInput, toDatetimeLocalInput } from '@/lib/event-time';
 
 const FIELDS: { key: keyof EventSettings; label: string; hint?: string; type?: 'text' | 'area' | 'datetime' }[] = [
   { key: 'name', label: 'EVENT NAME', hint: 'Used in page titles and share cards.' },
-  { key: 'starts_at', label: 'STARTS', type: 'datetime', hint: 'Drives the countdown and live agenda mode on event day.' },
-  { key: 'ends_at', label: 'ENDS', type: 'datetime' },
+  { key: 'starts_at', label: 'STARTS', type: 'datetime', hint: `Drives the countdown and live agenda mode (${EVENT_TIME_ZONE}).` },
+  { key: 'ends_at', label: 'ENDS', type: 'datetime', hint: `Event local time (${EVENT_TIME_ZONE}).` },
   { key: 'venue_name', label: 'VENUE NAME' },
   { key: 'venue_address', label: 'VENUE ADDRESS' },
   { key: 'map_query', label: 'MAP SEARCH QUERY', hint: 'Feeds the embedded map and the directions link.' },
@@ -18,19 +19,13 @@ const FIELDS: { key: keyof EventSettings; label: string; hint?: string; type?: '
   { key: 'hero_subline', label: 'HERO SUBLINE', type: 'area' },
 ];
 
-function toLocalInput(iso: string | null): string {
-  if (!iso) return '';
-  const d = new Date(iso);
-  return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
-}
-
 export function SettingsForm({ settings }: { settings: EventSettings }) {
   const [values, setValues] = useState<Record<string, string>>(() => {
     const v: Record<string, string> = {};
     FIELDS.forEach((f) => {
       const raw = settings?.[f.key];
       v[f.key as string] = f.type === 'datetime'
-        ? toLocalInput((raw as string) ?? null)
+        ? toDatetimeLocalInput((raw as string) ?? null)
         : raw == null ? '' : String(raw);
     });
     return v;
@@ -43,7 +38,7 @@ export function SettingsForm({ settings }: { settings: EventSettings }) {
     const payload: Record<string, string> = { registration_open: String(open) };
     FIELDS.forEach((f) => {
       const v = values[f.key as string];
-      payload[f.key as string] = f.type === 'datetime' && v ? new Date(v).toISOString() : v;
+      payload[f.key as string] = f.type === 'datetime' && v ? fromDatetimeLocalInput(v) : v;
     });
     start(async () => {
       const res = await updateSettings(payload);

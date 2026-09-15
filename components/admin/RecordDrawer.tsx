@@ -4,14 +4,7 @@ import { c } from '@/lib/tokens';
 import { upsertRecord } from '@/lib/actions';
 import { createClient } from '@/lib/supabase/client';
 import type { CollectionSpec } from '@/lib/collections';
-
-/** ISO -> value for <input type="datetime-local"> in the browser's timezone. */
-function toLocalInput(iso: string | null): string {
-  if (!iso) return '';
-  const d = new Date(iso);
-  const off = d.getTimezoneOffset() * 60000;
-  return new Date(d.getTime() - off).toISOString().slice(0, 16);
-}
+import { fromDatetimeLocalInput, toDatetimeLocalInput } from '@/lib/event-time';
 
 export function RecordDrawer({
   spec, record, onClose, canPublish,
@@ -25,7 +18,7 @@ export function RecordDrawer({
     const init: Record<string, string> = {};
     spec.fields.forEach((f) => {
       const raw = record?.[f.key];
-      if (f.type === 'datetime') init[f.key] = toLocalInput((raw as string) ?? null);
+      if (f.type === 'datetime') init[f.key] = toDatetimeLocalInput((raw as string) ?? null);
       else init[f.key] = raw == null ? (f.type === 'select' ? (f.options?.[0] ?? '') : '') : String(raw);
     });
     return init;
@@ -56,7 +49,7 @@ export function RecordDrawer({
     const payload: Record<string, string> = {};
     spec.fields.forEach((f) => {
       const v = values[f.key];
-      payload[f.key] = f.type === 'datetime' && v ? new Date(v).toISOString() : v;
+      payload[f.key] = f.type === 'datetime' && v ? fromDatetimeLocalInput(v) : v;
     });
 
     start(async () => {
