@@ -193,7 +193,7 @@ Before launch:
 ```
 app/
   page.tsx                     Home — hero, countdown, agenda, gallery, sponsors, FAQ, map
-  speakers/  team/  members/   Public pages
+  speakers/  team/            Public pages (team includes members)
   login/                       Google sign-in
   auth/callback/               OAuth code exchange
   auth/signout/

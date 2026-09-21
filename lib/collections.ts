@@ -73,8 +73,8 @@ export const COLLECTIONS: Record<string, CollectionSpec> = {
   },
   team: {
     key: 'team', table: 'team_members', title: 'Team & Members',
-    desc: 'Leads show on the Team page; members go to the Members page. Initials generate from the name automatically.',
-    newLabel: '+ NEW MEMBER', section: 'Team page', revalidate: ['/team', '/members'],
+    desc: 'Leads and members both show on the Team page. Initials generate from the name automatically.',
+    newLabel: '+ NEW MEMBER', section: 'Team page', revalidate: ['/team'],
     labelField: 'name', roles: ['owner', 'admin', 'comms'],
     columns: [
       { label: 'NAME', key: 'name', width: '1fr' },
@@ -126,7 +126,7 @@ export const COLLECTIONS: Record<string, CollectionSpec> = {
   stats: {
     key: 'stats', table: 'stats', title: 'Stats',
     desc: 'The four numbers under "Built by students, for students". Free text on purpose so you can write "700+" rather than an exact figure.',
-    newLabel: '+ NEW STAT', section: 'Home / About', revalidate: ['/', '/team', '/members'],
+    newLabel: '+ NEW STAT', section: 'Home / About', revalidate: ['/', '/team'],
     labelField: 'label', roles: ['owner', 'admin', 'comms'],
     columns: [
       { label: 'VALUE', key: 'value', width: '120px' },

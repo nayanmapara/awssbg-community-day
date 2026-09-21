@@ -37,6 +37,9 @@ const securityHeaders = [
 const nextConfig = {
   poweredByHeader: false,
   reactStrictMode: true,
+  async redirects() {
+    return [{ source: '/members', destination: '/team', permanent: true }];
+  },
   images: {
     remotePatterns: [
       { protocol: 'https', hostname: supabaseHost, pathname: '/storage/v1/object/public/**' },

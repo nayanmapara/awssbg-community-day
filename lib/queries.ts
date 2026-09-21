@@ -59,15 +59,6 @@ export async function getStats(): Promise<Stat[]> {
   return (data ?? []) as Stat[];
 }
 
-/** Real member headcount from the database, for the Team and Members pages. */
-export async function getMemberCount(): Promise<number> {
-  const sb = createPublicClient();
-  const { count } = await sb.from('team_members')
-    .select('id', { count: 'exact', head: true })
-    .eq('status', 'published').eq('tier', 'member');
-  return count ?? 0;
-}
-
 export async function getFaqs(): Promise<Faq[]> {
   const sb = createPublicClient();
   const { data } = await sb.from('faqs').select('*')
