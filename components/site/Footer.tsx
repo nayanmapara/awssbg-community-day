@@ -15,6 +15,7 @@ const PAGES = [
   { href: '/speakers', label: 'Speakers' },
   { href: '/team', label: 'Team' },
   { href: '/blog', label: 'Blog' },
+  { href: '/builder-profile', label: 'Builder Profile' },
 ];
 
 export function Footer() {

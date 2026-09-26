@@ -12,7 +12,7 @@ const LINKS = [
   { href: '/#agenda', label: missionCopy.nav.agenda, section: 'agenda' },
   { href: '/speakers', label: 'SPEAKERS' },
   { href: '/team', label: 'TEAM' },
-  { href: '/blog', label: 'BLOG' },
+  { href: '/builder-profile', label: 'BUILDER' },
   { href: '/#faq', label: missionCopy.nav.faq, section: 'faq' },
   { href: '/#location', label: missionCopy.nav.location, section: 'location' },
 ];

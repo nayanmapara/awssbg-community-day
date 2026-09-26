@@ -26,6 +26,7 @@ const GROUPS: { label: string; items: { key: string; href: string; label: string
     items: [
       { key: 'announcements', href: '/admin/announcements', label: 'Announcements' },
       { key: 'checkin', href: '/admin/checkin', label: 'Door Check-in' },
+      { key: 'lucky-draw', href: '/admin/lucky-draw', label: 'Lucky Draw' },
     ],
   },
   {

@@ -5,11 +5,11 @@ export const ROLE_ACCESS: Record<MemberRole, string[]> = {
   // promotes them. Never add a section here.
   pending: [],
   owner: ['*'],
-  admin: ['agenda','speakers','team','sponsors','highlights','stats','faqs','gallery','announcements','settings','checkin','activity'],
+  admin: ['agenda','speakers','team','sponsors','highlights','stats','faqs','gallery','announcements','settings','checkin','lucky-draw','activity'],
   program: ['agenda','speakers'],
   comms: ['announcements','gallery','faqs','team','highlights','stats'],
   partnerships: ['sponsors','speakers'],
-  volunteer: ['checkin'],
+  volunteer: ['checkin','lucky-draw'],
 };
 
 export const ROLE_LABELS: Record<MemberRole, string> = {

@@ -809,6 +809,42 @@ input:focus-visible, textarea:focus-visible, select:focus-visible, button:focus-
   overflow: hidden;
 }
 
+@keyframes luckyDrawFlicker {
+  0%, 100% { opacity: 1; transform: translateY(0); }
+  40% { opacity: 0.55; transform: translateY(-6px); }
+  70% { opacity: 0.85; transform: translateY(3px); }
+}
+@keyframes luckyDrawLand {
+  0% { transform: scale(0.86); opacity: 0.4; filter: blur(4px); }
+  60% { transform: scale(1.06); opacity: 1; filter: blur(0); }
+  100% { transform: scale(1); opacity: 1; filter: blur(0); }
+}
+@keyframes luckyDrawBurst {
+  0% { transform: scale(0.4); opacity: 0.55; }
+  100% { transform: scale(1.8); opacity: 0; }
+}
+@keyframes luckyDrawGlow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(77,168,255,0); }
+  50% { box-shadow: 0 0 40px rgba(77,168,255,0.22); }
+}
+
+.lucky-draw-name--spin {
+  animation: luckyDrawFlicker 0.18s ease-in-out infinite;
+}
+.lucky-draw-name--land {
+  animation: luckyDrawLand 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.lucky-draw-stage--win {
+  animation: luckyDrawGlow 1.6s ease-in-out 2;
+}
+.lucky-draw-burst {
+  position: absolute;
+  inset: 18%;
+  border: 1px solid rgba(77,168,255,0.55);
+  pointer-events: none;
+  animation: luckyDrawBurst 0.9s ease-out both;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
