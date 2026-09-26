@@ -58,6 +58,15 @@ create policy "owner deletes builder profiles"
   to authenticated
   using (private.has_role(array['owner']::member_role[]));
 
+-- Public lucky-draw page only needs names (no emails).
+-- security_invoker = false so anon can read via the view without table RLS blocking.
+create or replace view lucky_draw_roster
+with (security_invoker = false) as
+  select id, display_name
+  from builder_profiles;
+
+grant select on lucky_draw_roster to anon, authenticated;
+
 -- ---------------------------------------------------------------------------
 -- Optional: seed / bulk-load later with COPY or INSERT … VALUES
 -- Example:
