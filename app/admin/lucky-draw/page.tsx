@@ -10,7 +10,7 @@ export default async function LuckyDrawPage() {
 
   const { data } = await supabase
     .from('builder_profiles')
-    .select('id, display_name, email')
+    .select('id, display_name')
     .order('created_at', { ascending: true });
 
   return <LuckyDrawConsole entrants={(data ?? []) as LuckyDrawEntrant[]} />;

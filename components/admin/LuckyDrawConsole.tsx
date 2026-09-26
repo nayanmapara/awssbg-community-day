@@ -6,7 +6,6 @@ import { c } from '@/lib/tokens';
 export type LuckyDrawEntrant = {
   id: string;
   display_name: string;
-  email: string;
 };
 
 type Phase = 'idle' | 'spinning' | 'winner';
@@ -51,7 +50,6 @@ export function LuckyDrawConsole({ entrants }: { entrants: LuckyDrawEntrant[] })
       return;
     }
 
-    // Slot-machine: fast shuffle, then ease into the winner.
     const totalMs = 4200;
     const start = performance.now();
     let nextTick = 40;
@@ -66,7 +64,6 @@ export function LuckyDrawConsole({ entrants }: { entrants: LuckyDrawEntrant[] })
         return;
       }
 
-      // Near the end, linger on the eventual winner so the reveal feels earned.
       const progress = elapsed / totalMs;
       const show = progress > 0.82 ? chosen : pickRandom(entrants);
       setDisplay(show);
@@ -89,7 +86,7 @@ export function LuckyDrawConsole({ entrants }: { entrants: LuckyDrawEntrant[] })
         </div>
         <h1 style={{ margin: 0, fontSize: 28, fontWeight: 800, color: c.textBright }}>Lucky Draw</h1>
         <p style={{ margin: '10px 0 0', color: c.muted, fontSize: 13, lineHeight: 1.6, maxWidth: 520 }}>
-          Pulls a random person from the builder roster ({entrants.length} entrant{entrants.length === 1 ? '' : 's'}).
+          Pulls a random name from the builder roster ({entrants.length} entrant{entrants.length === 1 ? '' : 's'}).
         </p>
       </div>
 
@@ -130,18 +127,6 @@ export function LuckyDrawConsole({ entrants }: { entrants: LuckyDrawEntrant[] })
         >
           {empty ? 'No entrants yet' : display?.display_name ?? '—'}
         </div>
-
-        {display && (
-          <div style={{ fontSize: 12, color: c.mutedDim, letterSpacing: '0.04em' }}>
-            {display.email}
-          </div>
-        )}
-
-        {winner && (
-          <div style={{ fontSize: 11, color: c.faint, marginTop: 4, fontFamily: 'inherit' }}>
-            id {winner.id.slice(0, 8)}…
-          </div>
-        )}
       </div>
 
       <div style={{ display: 'flex', gap: 12, marginTop: 20, flexWrap: 'wrap' }}>
@@ -175,16 +160,14 @@ export function LuckyDrawConsole({ entrants }: { entrants: LuckyDrawEntrant[] })
               <div
                 key={`${h.id}-${i}`}
                 style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  gap: 16,
                   padding: '10px 14px',
                   background: c.panel,
                   border: `1px solid ${c.line}`,
+                  fontWeight: 700,
+                  color: c.textBright,
                 }}
               >
-                <span style={{ fontWeight: 700, color: c.textBright }}>{h.display_name}</span>
-                <span style={{ color: c.mutedDim, fontSize: 12 }}>{h.email}</span>
+                {h.display_name}
               </div>
             ))}
           </div>
